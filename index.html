@@ -535,6 +535,48 @@ const DB = [
     desc:'On all fours, hover your knees 2 inches off the floor. Crawl forward 4 steps, then backward. Keep the knees low.',
     muscles:'core · shoulders · hip flexors · quads', dur:40, energy:'medium',
     warmup:false, stretch:false, space:'room' },
+
+  // ── RESISTANCE BANDS ──
+  { id:'band_pull_apart', name:'Band Pull-Aparts',      eyebrow:'Strength',
+    desc:'Hold the band at shoulder height with arms extended. Pull it apart by driving both hands outward until fully stretched. Squeeze shoulder blades, return slowly.',
+    muscles:'rear deltoids · rhomboids · traps', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  { id:'band_row',        name:'Banded Rows',           eyebrow:'Strength',
+    desc:'Step on the band, hinge slightly forward, hold the ends. Pull toward your hips driving elbows back. Hold a beat at the top, lower with control.',
+    muscles:'lats · rhomboids · biceps', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  { id:'band_squat',      name:'Banded Squats',         eyebrow:'Strength',
+    desc:'Step on the band, hold the handles at shoulder height. Squat as normal — the band increases resistance as you drive back up.',
+    muscles:'quads · glutes · hamstrings', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  { id:'band_ohpress',    name:'Banded Overhead Press', eyebrow:'Strength',
+    desc:'Step on the band, hold handles at shoulders. Press straight overhead until arms fully extend. Lower with control. Keep core braced throughout.',
+    muscles:'shoulders · triceps · upper traps', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  // ── DUMBBELLS ──
+  { id:'goblet_squat',    name:'Goblet Squat',          eyebrow:'Strength',
+    desc:'Hold one dumbbell vertically at your chest. Feet shoulder-width. Squat deep, chest up, knees tracking out over toes. Drive back up through your heels.',
+    muscles:'quads · glutes · core', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'weights' },
+
+  { id:'db_rdl',          name:'Dumbbell RDL',          eyebrow:'Strength',
+    desc:'Hold dumbbells in front of thighs. Hinge at hips, sending them back as the weights travel down your legs. Feel the hamstrings load. Drive hips forward to stand.',
+    muscles:'hamstrings · glutes · lower back', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'weights' },
+
+  { id:'db_row',          name:'Single-Arm Row',        eyebrow:'Strength',
+    desc:'Brace one hand on a surface, hold dumbbell in the other. Pull it toward your hip, driving your elbow back past your torso. Squeeze at top. Switch sides.',
+    muscles:'lats · rhomboids · biceps · core', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'mat', gear:'weights' },
+
+  { id:'db_floor_press',  name:'Dumbbell Floor Press',  eyebrow:'Strength',
+    desc:'Lie on your back, dumbbells at chest with upper arms resting on the floor. Press straight up until arms extend. Lower back to floor with control.',
+    muscles:'chest · shoulders · triceps', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'mat', gear:'weights' },
 ];
 
 // ═══════════════════════════════════════════
@@ -603,6 +645,9 @@ const S = {
   secsTotal: 0,
   paused: false,
   startMs: null,
+  numRounds: 1,
+  circuitLen: 0,
+  warmupCount: 0,
 };
 
 // ═══════════════════════════════════════════
@@ -625,7 +670,7 @@ const TIPS = [
 // WORKOUT GENERATOR
 // ═══════════════════════════════════════════
 function buildWorkout() {
-  const { space, time, energy } = S.answers;
+  const { space, time, energy, equipment } = S.answers;
 
   // Space filter
   const spaceAllowed = { standing: ['standing'], mat: ['standing','mat'], room: ['standing','mat','room'] };
@@ -635,31 +680,36 @@ function buildWorkout() {
   const energyOk = { low: ['low'], medium: ['low','medium'], high: ['low','medium','high'] };
   pool = pool.filter(e => energyOk[energy].includes(e.energy));
 
-  const warmups  = shuffle(pool.filter(e => e.warmup));
-  const stretches = shuffle(pool.filter(e => e.stretch));
-  const mains    = shuffle(pool.filter(e => !e.warmup && !e.stretch));
+  // Equipment filter: always include bodyweight (no gear field), plus gear that matches
+  pool = pool.filter(e => !e.gear || e.gear === 'none' || e.gear === equipment);
 
-  // Target count based on time
-  const countMap = { 5:3, 10:5, 20:8, 30:11 };
-  let target = countMap[time] || 5;
+  const warmups   = shuffle(pool.filter(e => e.warmup));
+  const stretches = shuffle(pool.filter(e => e.stretch));
+  const mains     = shuffle(pool.filter(e => !e.warmup && !e.stretch));
+
+  // Longer workouts repeat the circuit to genuinely fill the selected time.
+  // avgDur ≈ 37 s/exercise; aim to fill ~90% of the target.
+  const numRounds   = time <= 10 ? 1 : time === 20 ? 2 : 3;
+  const restSecs    = getRestSecs();
+  const totalSlots  = Math.round((time * 60 * 0.9) / (37 + restSecs));
+  const wCount      = time >= 20 ? 2 : 1;
+  const stretchCount = time >= 10 ? 1 : 0;
+  const mainSlots   = Math.max(1, totalSlots - wCount - stretchCount);
+  const circuitSize = Math.min(mains.length, Math.ceil(mainSlots / numRounds));
+  const circuit     = mains.slice(0, circuitSize);
 
   const result = [];
-  const used = new Set();
-
-  // 1-2 warmups
-  const wCount = time >= 20 ? 2 : 1;
-  warmups.slice(0, wCount).forEach(e => { result.push(e); used.add(e.id); });
-
-  // Main fill
-  const stretchSlots = time >= 10 ? 1 : 0;
-  const mainSlots = target - result.length - stretchSlots;
-  mains.filter(e => !used.has(e.id)).slice(0, mainSlots).forEach(e => { result.push(e); used.add(e.id); });
-
-  // End stretch
-  if (stretchSlots > 0) {
-    const s = stretches.filter(e => !used.has(e.id))[0];
+  warmups.slice(0, wCount).forEach(e => result.push(e));
+  for (let r = 0; r < numRounds; r++) result.push(...circuit);
+  if (stretchCount > 0) {
+    const usedIds = new Set(result.map(e => e.id));
+    const s = stretches.find(e => !usedIds.has(e.id));
     if (s) result.push(s);
   }
+
+  S.numRounds   = numRounds;
+  S.circuitLen  = circuitSize;
+  S.warmupCount = Math.min(wCount, warmups.length);
 
   return result;
 }
@@ -773,17 +823,35 @@ function renderPreview() {
                  + (S.workout.length - 1) * getRestSecs();
   const mins = Math.ceil(totalSec / 60);
 
-  document.getElementById('preview-sub').textContent =
-    `${S.workout.length} exercises · ~${mins} min`;
+  let subText = `${S.workout.length} exercises · ~${mins} min`;
+  if (S.numRounds > 1) subText += ` · ${S.numRounds} rounds`;
+  document.getElementById('preview-sub').textContent = subText;
 
-  document.getElementById('preview-list').innerHTML = S.workout.map((e, i) => `
-    <div class="wi">
-      <div class="wi-n">${i + 1}</div>
-      <div class="wi-name">${e.name}</div>
-      <div class="wi-tag">${e.eyebrow}</div>
-      <div class="wi-dur">${e.dur}s</div>
-    </div>
-  `).join('');
+  // For multi-round workouts show the circuit once, then a repeat note
+  const displayList = S.numRounds > 1
+    ? [...S.workout.slice(0, S.warmupCount),
+       ...S.workout.slice(S.warmupCount, S.warmupCount + S.circuitLen),
+       ...S.workout.slice(S.warmupCount + S.circuitLen * S.numRounds)]
+    : S.workout;
+
+  const roundNote = S.numRounds > 1
+    ? `<div class="wi" style="border-color:var(--accent-dim);background:var(--accent-dim)">
+        <div class="wi-n" style="font-size:17px;background:none;width:auto;height:auto">↻</div>
+        <div class="wi-name" style="font-size:13px;color:var(--text2);font-weight:500">
+          Circuit above repeats ${S.numRounds}× — ${S.workout.length} total exercises
+        </div>
+      </div>`
+    : '';
+
+  document.getElementById('preview-list').innerHTML =
+    displayList.map((e, i) => `
+      <div class="wi">
+        <div class="wi-n">${i + 1}</div>
+        <div class="wi-name">${e.name}</div>
+        <div class="wi-tag">${e.eyebrow}</div>
+        <div class="wi-dur">${e.dur}s</div>
+      </div>
+    `).join('') + roundNote;
 }
 
 function reshuffleWorkout() {
@@ -807,7 +875,22 @@ function renderExercise() {
   const ex = S.workout[S.exIdx];
   const total = S.workout.length;
 
-  document.getElementById('ex-prog').textContent    = `${S.exIdx + 1} of ${total}`;
+  let progressText;
+  if (S.numRounds > 1) {
+    if (ex.warmup) {
+      progressText = `Warmup · ${S.exIdx + 1} of ${total}`;
+    } else if (ex.stretch) {
+      progressText = `Stretch · ${S.exIdx + 1} of ${total}`;
+    } else {
+      const mainIdx   = S.exIdx - S.warmupCount;
+      const round     = Math.floor(mainIdx / S.circuitLen) + 1;
+      const exInRound = (mainIdx % S.circuitLen) + 1;
+      progressText    = `Round ${round} of ${S.numRounds} · ${exInRound} of ${S.circuitLen}`;
+    }
+  } else {
+    progressText = `${S.exIdx + 1} of ${total}`;
+  }
+  document.getElementById('ex-prog').textContent    = progressText;
   document.getElementById('ex-eyebrow').textContent = ex.eyebrow;
   document.getElementById('ex-name').textContent    = ex.name;
   document.getElementById('ex-desc').textContent    = ex.desc;
