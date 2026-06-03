@@ -244,6 +244,7 @@
       <p class="sub" style="margin-top:9px">That's the hardest part. Let's find something you can actually do right now — no gear, no plan needed.</p>
     </div>
     <button class="btn btn-primary" onclick="startAssessment()">I'm ready →</button>
+    <button class="btn btn-ghost" onclick="openTrainerPlan()">My trainer's plan →</button>
   </div>
 
   <!-- ════ SCREEN 2: ASSESSMENT ════ -->
@@ -339,6 +340,52 @@
       <button class="btn btn-ghost" onclick="reshuffleAndGo()">Different workout</button>
       <button class="btn btn-ghost" onclick="goHome()">Start over</button>
     </div>
+  </div>
+
+  <!-- ════ SCREEN 7: TRAINER PLAN PREVIEW ════ -->
+  <div id="s-trainer" class="screen">
+    <div>
+      <p class="eyebrow">Trainer's plan · home version</p>
+      <h2 class="hed" style="margin-top:6px">Today's session.</h2>
+      <p class="sub" style="margin-top:7px;font-size:15px">Bands &amp; 10 lb dumbbells · 3×10 each · 90s rest</p>
+    </div>
+    <div class="wl" id="plan-list"></div>
+    <button class="btn btn-primary" onclick="startPlanExercise(0)">Start →</button>
+    <button class="btn btn-ghost" onclick="showScreen('land')">← Back</button>
+  </div>
+
+  <!-- ════ SCREEN 8: PLAN EXERCISE ════ -->
+  <div id="s-plan-ex" class="screen">
+    <div class="ex-header">
+      <span class="ex-progress" id="plan-ex-prog">Exercise 1 of 7</span>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="skipPlanExercise()">Skip</button>
+    </div>
+    <div>
+      <p class="eyebrow" id="plan-set-label">Set 1 of 3 · 10 reps</p>
+      <h2 class="ex-name" style="margin-top:5px" id="plan-ex-name">Exercise</h2>
+    </div>
+    <p class="ex-desc" id="plan-ex-desc"></p>
+    <p class="ex-muscles" id="plan-ex-muscles"></p>
+    <p class="ex-tip" id="plan-ex-tip"></p>
+    <p style="font-size:12px;color:var(--text3)">
+      Gym equivalent: <span id="plan-gym-name" style="color:var(--text2)"></span>
+    </p>
+    <div class="ex-controls">
+      <button class="btn btn-ghost" style="flex:1" onclick="skipPlanExercise()">Skip exercise</button>
+      <button class="btn btn-primary" style="flex:2" id="btn-plan-done" onclick="donePlanSet()">Done set →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 9: PLAN REST ════ -->
+  <div id="s-plan-rest" class="screen">
+    <div class="rest-center">
+      <p class="eyebrow">Rest</p>
+      <p class="rest-big" id="plan-rest-n">90</p>
+      <p class="rest-label">seconds</p>
+    </div>
+    <p class="next-up" id="plan-next-up">Next: <strong>Set 2 of 3</strong></p>
+    <div class="div"></div>
+    <button class="btn btn-ghost" onclick="skipPlanRest()">Skip rest →</button>
   </div>
 
 </div>
@@ -580,6 +627,78 @@ const DB = [
 ];
 
 // ═══════════════════════════════════════════
+// TRAINER'S PLAN — home equivalents
+// Gym: DB shoulder press / lat pulldown / leg press / DB row /
+//      leg extension / hamstring curl / cable tricep pushdown
+// Equipment needed: resistance bands + 2 × 10 lb dumbbells
+// ═══════════════════════════════════════════
+const TRAINER_PLAN = [
+  {
+    id: 'tp_shoulder_press',
+    name: 'Seated DB Shoulder Press',
+    gymName: 'DB Seated Shoulder Press',
+    eyebrow: 'Shoulders',
+    desc: 'Sit upright on a chair. Dumbbells at shoulder height, palms forward. Press both overhead until arms fully extend. Lower with control back to shoulders.',
+    muscles: 'shoulders · triceps · upper traps',
+    sets: 3, reps: 10, restSecs: 90,
+  },
+  {
+    id: 'tp_lat_pull',
+    name: 'Band Lat Pulldown',
+    gymName: 'Lat Pulldown',
+    eyebrow: 'Back',
+    desc: 'Loop band over a door frame or pull-up bar. Kneel or sit. Grab both ends with arms extended overhead. Pull down to upper chest driving elbows toward your hips. Return slowly.',
+    muscles: 'lats · biceps · rear deltoids',
+    sets: 3, reps: 10, restSecs: 90,
+  },
+  {
+    id: 'tp_goblet_squat',
+    name: 'Goblet Squat',
+    gymName: 'Seated Leg Press',
+    eyebrow: 'Legs',
+    desc: 'Hold one 10 lb dumbbell vertically at your chest. Feet shoulder-width, toes slightly out. Squat as deep as comfortable, chest up. Drive back up through your heels.',
+    muscles: 'quads · glutes · hamstrings',
+    sets: 3, reps: 10, restSecs: 90,
+  },
+  {
+    id: 'tp_db_row',
+    name: 'Single-Arm Dumbbell Row',
+    gymName: 'Dumbbell Row',
+    eyebrow: 'Back',
+    desc: 'Brace one hand on a chair or table. Hold 10 lb dumbbell in the other. Let shoulder drop, then pull dumbbell toward your hip driving elbow past your torso. Both sides = one set.',
+    muscles: 'lats · rhomboids · biceps',
+    sets: 2, reps: 10, restSecs: 90,
+  },
+  {
+    id: 'tp_leg_ext',
+    name: 'Band Leg Extension',
+    gymName: 'Machine Leg Extension',
+    eyebrow: 'Quads',
+    desc: 'Sit on a chair. Loop band around one ankle, anchor the other end under the front chair legs. Extend your knee until the leg is straight. Squeeze at the top. All reps one leg, then switch.',
+    muscles: 'quads',
+    sets: 3, reps: 10, restSecs: 90,
+  },
+  {
+    id: 'tp_ham_curl',
+    name: 'Band Hamstring Curl',
+    gymName: 'Seated Hamstring Curl',
+    eyebrow: 'Hamstrings',
+    desc: 'Lie face down. Loop band around one ankle, anchor the other end to something stable near the floor (table leg, couch foot). Curl your heel toward your glute. All reps one leg, then switch.',
+    muscles: 'hamstrings',
+    sets: 3, reps: 10, restSecs: 90,
+  },
+  {
+    id: 'tp_tricep',
+    name: 'Band Tricep Pushdown',
+    gymName: 'Cable Tricep Pushdown',
+    eyebrow: 'Triceps',
+    desc: 'Loop band over the top of a door (close the door to anchor it). Face the door, grab band with both hands at chest height, elbows pinned to sides. Push straight down until arms fully extend.',
+    muscles: 'triceps',
+    sets: 3, reps: 10, restSecs: 90,
+  },
+];
+
+// ═══════════════════════════════════════════
 // QUESTIONS
 // ═══════════════════════════════════════════
 const QUESTIONS = [
@@ -648,6 +767,8 @@ const S = {
   numRounds: 1,
   circuitLen: 0,
   warmupCount: 0,
+  planExIdx: 0,
+  planSetIdx: 0,
 };
 
 // ═══════════════════════════════════════════
@@ -1002,7 +1123,106 @@ function finishWorkout() {
 
 function doAgain()         { S.startMs = null; startExercise(0); }
 function reshuffleAndGo()  { S.startMs = null; S.workout = buildWorkout(); renderPreview(); showScreen('preview'); }
-function goHome()          { clearInterval(S.timerInterval); clearInterval(S.restInterval); S.startMs = null; showScreen('land'); }
+function goHome()          { clearInterval(S.timerInterval); clearInterval(S.restInterval); clearInterval(planRestInterval); S.startMs = null; showScreen('land'); }
+
+// ═══════════════════════════════════════════
+// TRAINER'S PLAN FLOW
+// ═══════════════════════════════════════════
+function openTrainerPlan() {
+  document.getElementById('plan-list').innerHTML = TRAINER_PLAN.map((e, i) => `
+    <div class="wi">
+      <div class="wi-n">${i + 1}</div>
+      <div class="wi-name">${e.name}</div>
+      <div class="wi-tag">${e.eyebrow}</div>
+      <div class="wi-dur">${e.sets}×${e.reps}</div>
+    </div>
+  `).join('');
+  showScreen('trainer');
+}
+
+function startPlanExercise(exIdx) {
+  if (!S.startMs) S.startMs = Date.now();
+  S.planExIdx = exIdx;
+  S.planSetIdx = 0;
+  renderPlanExercise();
+  showScreen('plan-ex');
+}
+
+function renderPlanExercise() {
+  const ex      = TRAINER_PLAN[S.planExIdx];
+  const setNum  = S.planSetIdx + 1;
+  const isLastSet = setNum === ex.sets;
+  const isLastEx  = S.planExIdx === TRAINER_PLAN.length - 1;
+
+  document.getElementById('plan-ex-prog').textContent   = `Exercise ${S.planExIdx + 1} of ${TRAINER_PLAN.length}`;
+  document.getElementById('plan-set-label').textContent = `Set ${setNum} of ${ex.sets} · ${ex.reps} reps`;
+  document.getElementById('plan-ex-name').textContent   = ex.name;
+  document.getElementById('plan-ex-desc').textContent   = ex.desc;
+  document.getElementById('plan-ex-muscles').innerHTML  = `<b>Works:</b> ${ex.muscles}`;
+  document.getElementById('plan-ex-tip').textContent    = TIPS[Math.floor(Math.random() * TIPS.length)];
+  document.getElementById('plan-gym-name').textContent  = ex.gymName;
+
+  const lastAction = isLastSet && isLastEx;
+  document.getElementById('btn-plan-done').textContent  =
+    lastAction ? 'Finish →' : isLastSet ? 'Done — next exercise →' : `Done set ${setNum} →`;
+}
+
+function donePlanSet() {
+  const ex        = TRAINER_PLAN[S.planExIdx];
+  const isLastSet = (S.planSetIdx + 1) >= ex.sets;
+  const isLastEx  = S.planExIdx >= TRAINER_PLAN.length - 1;
+
+  if (isLastSet && isLastEx) { finishPlan(); return; }
+
+  const nextLabel = isLastSet
+    ? `Next: <strong>${TRAINER_PLAN[S.planExIdx + 1].name}</strong>`
+    : `Next: <strong>Set ${S.planSetIdx + 2} of ${ex.sets} · ${ex.reps} reps</strong>`;
+
+  document.getElementById('plan-rest-n').textContent  = ex.restSecs;
+  document.getElementById('plan-next-up').innerHTML   = nextLabel;
+  showScreen('plan-rest');
+  startPlanRest(ex.restSecs, isLastSet);
+}
+
+let planRestInterval = null;
+
+function startPlanRest(secs, movingToNextEx) {
+  clearInterval(planRestInterval);
+  let left = secs;
+  planRestInterval = setInterval(() => {
+    left--;
+    document.getElementById('plan-rest-n').textContent = left;
+    if (left <= 0) { clearInterval(planRestInterval); advancePlan(movingToNextEx); }
+  }, 1000);
+}
+
+function advancePlan(movingToNextEx) {
+  if (movingToNextEx) { S.planExIdx++; S.planSetIdx = 0; }
+  else                { S.planSetIdx++; }
+  renderPlanExercise();
+  showScreen('plan-ex');
+}
+
+function skipPlanRest() {
+  clearInterval(planRestInterval);
+  const ex = TRAINER_PLAN[S.planExIdx];
+  advancePlan((S.planSetIdx + 1) >= ex.sets);
+}
+
+function skipPlanExercise() {
+  clearInterval(planRestInterval);
+  if (S.planExIdx >= TRAINER_PLAN.length - 1) finishPlan();
+  else startPlanExercise(S.planExIdx + 1);
+}
+
+function finishPlan() {
+  clearInterval(planRestInterval);
+  const mins = S.startMs ? Math.round((Date.now() - S.startMs) / 60000) : 0;
+  document.getElementById('done-exercises').textContent = TRAINER_PLAN.length;
+  document.getElementById('done-mins').textContent      = Math.max(1, mins);
+  S.startMs = null;
+  showScreen('done');
+}
 
 // ═══════════════════════════════════════════
 // BREATHING ANIMATION
