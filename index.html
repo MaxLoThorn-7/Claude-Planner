@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>The Signal &amp; The Crowd</title>
+  <style>
+    :root {
+      --bg: #0c0c11;
+      --surface: #13131d;
+      --surface2: #1a1a27;
+      --border: #252535;
+      --text: #e4e4ef;
+      --text2: #6868a0;
+      --text3: #38385a;
+      --accent: #6b5ef8;
+      --accent-dim: rgba(107,94,248,0.12);
+      --accent-hover: #7c70f9;
+      --warm: #f0955a;
+      --warm-dim: rgba(240,149,90,0.15);
+      --green: #4cc984;
+      --green-dim: rgba(76,201,132,0.13);
+      --red-c: #e05c5c;
+      --red-dim: rgba(224,92,92,0.15);
+      --blue-c: #4a9eff;
+      --blue-dim: rgba(74,158,255,0.15);
+      --r: 14px;
+      --r-sm: 10px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      background-image: radial-gradient(ellipse at 50% 0%, rgba(107,94,248,0.06) 0%, transparent 70%);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+    .screen {
+      width: 100%;
+      max-width: 460px;
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeUp 0.35s ease both;
+    }
+    .screen.active { display: flex; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Typography ── */
+    .hed { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; }
+    .sub { font-size: 17px; color: var(--text2); line-height: 1.65; }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text3);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      padding: 15px 22px; border-radius: var(--r-sm);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s ease; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+      background: transparent; color: var(--text2);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px;
+    }
+    .card-accent { border-color: var(--accent); background: var(--accent-dim); }
+    .card-warm   { border-color: var(--warm);   background: var(--warm-dim);   }
+
+    /* ── Divider ── */
+    .div { height: 1px; background: var(--border); }
+
+    /* ── Urn display ── */
+    .urn-row { display: flex; gap: 12px; justify-content: center; }
+    .urn-card {
+      flex: 1; max-width: 160px; padding: 20px 12px;
+      border: 2px solid var(--border); border-radius: var(--r);
+      text-align: center; display: flex; flex-direction: column;
+      align-items: center; gap: 8px;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    .urn-card .urn-ico { font-size: 38px; line-height: 1; }
+    .urn-card .urn-lbl { font-size: 15px; font-weight: 700; }
+    .urn-card.red-urn  { border-color: var(--red-c);  box-shadow: 0 0 22px var(--red-dim); }
+    .urn-card.blue-urn { border-color: var(--blue-c); box-shadow: 0 0 22px var(--blue-dim); }
+
+    /* ── Round progress dots ── */
+    .round-dots { display: flex; gap: 6px; }
+    .round-dot {
+      height: 4px; width: 24px; border-radius: 2px;
+      background: var(--border); transition: background 0.3s;
+    }
+    .round-dot.done   { background: var(--accent); }
+    .round-dot.active { background: rgba(107,94,248,0.45); }
+
+    /* ── Vote grid ── */
+    .vote-grid {
+      display: flex; gap: 10px; justify-content: center;
+      flex-wrap: wrap; padding: 4px 0; min-height: 72px;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.5) translateY(10px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .vote-bubble {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: var(--surface); border: 2px solid var(--border);
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 1px;
+      opacity: 0;
+      animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .vote-bubble .v-id   { font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; }
+    .vote-bubble .v-vote { font-size: 14px; line-height: 1; }
+    .vote-bubble.red-vote  { border-color: var(--red-c);  background: var(--red-dim); }
+    .vote-bubble.blue-vote { border-color: var(--blue-c); background: var(--blue-dim); }
+    .vote-bubble:nth-child(1) { animation-delay: 0.20s; }
+    .vote-bubble:nth-child(2) { animation-delay: 0.55s; }
+    .vote-bubble:nth-child(3) { animation-delay: 0.90s; }
+    .vote-bubble:nth-child(4) { animation-delay: 1.25s; }
+    .vote-bubble:nth-child(5) { animation-delay: 1.60s; }
+
+    /* ── Choice buttons ── */
+    .choice-row {
+      display: flex; gap: 12px;
+      opacity: 0; transition: opacity 0.4s ease;
+      pointer-events: none;
+    }
+    .choice-row.visible { opacity: 1; pointer-events: auto; }
+    .choice-big {
+      flex: 1; padding: 20px; border-radius: var(--r);
+      font-size: 18px; font-weight: 700; border: 2px solid transparent;
+      cursor: pointer; transition: all 0.15s; min-height: 64px;
+      -webkit-tap-highlight-color: transparent; user-select: none;
+    }
+    .choice-big.red-choice  { background: var(--red-dim);  border-color: var(--red-c);  color: var(--red-c); }
+    .choice-big.blue-choice { background: var(--blue-dim); border-color: var(--blue-c); color: var(--blue-c); }
+    .choice-big:hover { filter: brightness(1.2); transform: translateY(-1px); }
+    .choice-big:active { transform: translateY(0); filter: brightness(0.95); }
+    .choice-big:disabled { opacity: 0.4; pointer-events: none; filter: none; transform: none; }
+
+    /* ── Reveal card ── */
+    .reveal-card {
+      border: 1.5px solid var(--border);
+      border-radius: var(--r); padding: 16px;
+      background: var(--surface);
+      display: none; flex-direction: column; gap: 8px;
+      animation: fadeUp 0.3s ease both;
+    }
+    .reveal-card.show { display: flex; }
+    .reveal-card.correct-reveal { border-color: var(--green); }
+    .reveal-card.wrong-reveal   { border-color: var(--warm); }
+    .reveal-verdict {
+      font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .verdict-icon { font-size: 20px; }
+    .reveal-expl { font-size: 13px; color: var(--text2); line-height: 1.65; }
+
+    /* ── Stat pair ── */
+    .stat-row { display: flex; gap: 10px; }
+    .stat-card {
+      flex: 1; text-align: center; padding: 16px 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+    }
+    .stat-n { font-size: 36px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+    .stat-l { font-size: 11px; color: var(--text2); margin-top: 5px; }
+
+    /* ── Score ── */
+    .score-wrap { text-align: center; padding: 8px 0; }
+    .score-big  { font-size: 72px; font-weight: 700; letter-spacing: -3px; line-height: 1; }
+    .score-sub  { font-size: 14px; color: var(--text2); margin-top: 4px; }
+
+    /* ── Cascade visualization ── */
+    .viz-row { display: flex; gap: 12px; }
+    .viz-panel {
+      flex: 1; padding: 14px 10px 12px;
+      border-radius: var(--r); border: 1.5px solid var(--border);
+      background: var(--surface);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .viz-panel.independent { border-color: #6b5ef8; }
+    .viz-panel.cascade-p   { border-color: #f0955a; }
+    .viz-label {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .viz-panel.independent .viz-label { color: #6b5ef8; }
+    .viz-panel.cascade-p .viz-label   { color: #f0955a; }
+    .viz-caption { font-size: 11px; color: var(--text2); line-height: 1.5; }
+
+    /* ── AI scenarios ── */
+    .scenario-card {
+      border-radius: var(--r); padding: 16px;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .scenario-card.echo   { background: var(--warm-dim);   border: 1.5px solid var(--warm); }
+    .scenario-card.signal { background: var(--accent-dim); border: 1.5px solid var(--accent); }
+    .scenario-tag {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .echo .scenario-tag   { color: var(--warm); }
+    .signal .scenario-tag { color: var(--accent); }
+    .scenario-title { font-size: 16px; font-weight: 700; }
+    .scenario-body  { font-size: 13px; color: var(--text2); line-height: 1.65; }
+    .scenario-verdict { font-size: 13px; font-weight: 700; margin-top: 2px; }
+    .echo .scenario-verdict   { color: var(--warm); }
+    .signal .scenario-verdict { color: var(--accent); }
+
+    /* ── Takeaway bullets ── */
+    .takeaway-list { display: flex; flex-direction: column; gap: 9px; }
+    .takeaway-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 13px 15px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      opacity: 0; animation: fadeUp 0.4s ease both;
+    }
+    .takeaway-item:nth-child(1) { animation-delay: 0.05s; }
+    .takeaway-item:nth-child(2) { animation-delay: 0.30s; }
+    .takeaway-item:nth-child(3) { animation-delay: 0.55s; }
+    .takeaway-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); flex-shrink: 0; margin-top: 7px;
+    }
+    .takeaway-text { font-size: 15px; line-height: 1.6; }
+
+    /* ── Share confirm ── */
+    .share-confirm {
+      text-align: center; font-size: 12px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--green); display: none;
+    }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .vote-bubble { animation-delay: 0s !important; }
+      .takeaway-item { animation-delay: 0s !important; }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 480px) {
+      .viz-row { flex-direction: column; }
+    }
+    @media (max-width: 380px) {
+      .hed { font-size: 27px; }
+      .vote-bubble { width: 52px; height: 52px; }
+      .choice-big { font-size: 16px; padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════ SCREEN 0: TITLE ════ -->
+  <div id="s-0" class="screen active">
+    <div>
+      <p class="eyebrow">A 5-minute interactive</p>
+      <h1 class="hed" style="margin-top:8px">The Signal &amp; The Crowd</h1>
+      <p class="sub" style="margin-top:10px">Why smart groups make dumb mistakes — and why AI makes it worse.</p>
+    </div>
+    <div class="card">
+      <p style="font-size:14px;color:var(--text2);line-height:1.65">Play a game about reading evidence. Then find out exactly when group judgment becomes dangerously wrong.</p>
+    </div>
+    <button class="btn btn-primary" onclick="showStage(1)">Start →</button>
+  </div>
+
+  <!-- ════ SCREEN 1: SETUP ════ -->
+  <div id="s-1" class="screen">
+    <div>
+      <p class="eyebrow">The setup</p>
+      <h2 class="hed" style="margin-top:8px">You are the Decider.</h2>
+      <p class="sub" style="margin-top:10px">Two urns exist. A computer secretly picked one. Each urn was examined privately by 5 experts, who then voted on which one they think it is.</p>
+    </div>
+    <div class="urn-row">
+      <div class="urn-card red-urn">
+        <span class="urn-ico">🔴</span>
+        <span class="urn-lbl">Urn Red</span>
+        <span style="font-size:12px;color:var(--text2)">mostly red balls</span>
+      </div>
+      <div class="urn-card blue-urn">
+        <span class="urn-ico">🔵</span>
+        <span class="urn-lbl">Urn Blue</span>
+        <span style="font-size:12px;color:var(--text2)">mostly blue balls</span>
+      </div>
+    </div>
+    <p class="sub" style="font-size:15px">You'll see their 5 votes. You won't see what ball each person drew. Your job: pick the urn.</p>
+    <div class="card card-accent">
+      <p style="font-size:13px;line-height:1.65">Each expert independently examined the urn and voted. They didn't talk to each other. Each vote is a private signal.</p>
+    </div>
+    <button class="btn btn-primary" onclick="startGame()">Show me the votes →</button>
+  </div>
+
+  <!-- ════ SCREEN 2: GAME (reused for all 3 rounds) ════ -->
+  <div id="s-game" class="screen">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <p class="eyebrow" id="game-label">Round 1 of 3</p>
+      <div class="round-dots">
+        <div class="round-dot" id="rd0"></div>
+        <div class="round-dot" id="rd1"></div>
+        <div class="round-dot" id="rd2"></div>
+      </div>
+    </div>
+    <div>
+      <h2 class="hed" style="font-size:26px">Which urn?</h2>
+      <p class="sub" style="font-size:14px;margin-top:5px" id="game-sub">Watch the votes come in. Then decide.</p>
+    </div>
+    <div class="vote-grid" id="vote-grid"></div>
+    <div class="choice-row" id="choice-row">
+      <button class="choice-big red-choice" id="btn-red" onclick="handleChoice('red')">🔴 Red</button>
+      <button class="choice-big blue-choice" id="btn-blue" onclick="handleChoice('blue')">🔵 Blue</button>
+    </div>
+    <div class="reveal-card" id="reveal-card">
+      <div class="reveal-verdict" id="reveal-verdict"></div>
+      <p class="reveal-expl" id="reveal-expl"></p>
+    </div>
+    <button class="btn btn-primary" id="btn-next" style="display:none" onclick="afterRound()">Next →</button>
+  </div>
+
+  <!-- ════ SCREEN 3: REFLECTION 1 (after round 1) ════ -->
+  <div id="s-r1" class="screen">
+    <div>
+      <p class="eyebrow">Why it worked</p>
+      <h2 class="hed" style="margin-top:8px;font-size:28px">Independent signals compound.</h2>
+    </div>
+    <p class="sub" style="font-size:15px">Each of those 5 votes came from someone who looked at the urn independently. No coordination. Each vote is real evidence.</p>
+    <div class="stat-row">
+      <div class="stat-card">
+        <p class="stat-n" style="color:var(--accent)">70%</p>
+        <p class="stat-l">Each expert's accuracy</p>
+      </div>
+      <div class="stat-card">
+        <p class="stat-n" style="color:var(--green)">83%</p>
+        <p class="stat-l">Majority vote accuracy</p>
+      </div>
+    </div>
+    <div class="card">
+      <p style="font-size:13px;line-height:1.65;color:var(--text2)">
+        This is the <strong style="color:var(--text)">Condorcet Jury theorem</strong>: when voters are independent and each better than chance, majority vote is more accurate than any single voter. The math compounds in your favor.
+      </p>
+    </div>
+    <button class="btn btn-primary" onclick="showStage('game', 1)">Round 2 →</button>
+  </div>
+
+  <!-- ════ SCREEN 4: REFLECTION 2 (after round 2) ════ -->
+  <div id="s-r2" class="screen">
+    <div>
+      <p class="eyebrow">Even a slim majority</p>
+      <h2 class="hed" style="margin-top:8px;font-size:28px">3–2 is still your best bet.</h2>
+    </div>
+    <p class="sub" style="font-size:15px">A 3–2 split feels uncertain. But with independent, informed voters, following the majority is still the optimal strategy — even when the margin is thin.</p>
+    <div class="card card-accent">
+      <p style="font-size:13px;line-height:1.65">5 independent voters at 70% accuracy give you an 83% majority. Going with your gut instead? That's closer to 50/50.</p>
+    </div>
+    <p class="sub" style="font-size:14px">One more round. This one has a twist.</p>
+    <button class="btn btn-primary" onclick="showStage('game', 2)">Round 3 (final) →</button>
+  </div>
+
+  <!-- ════ SCREEN 5: SCORE ════ -->
+  <div id="s-score" class="screen">
+    <div>
+      <p class="eyebrow">All 3 rounds done</p>
+      <h2 class="hed" style="margin-top:8px">You've seen the pattern.</h2>
+    </div>
+    <div class="score-wrap">
+      <p class="score-big" id="score-num">—</p>
+      <p class="score-sub">rounds where majority was correct</p>
+    </div>
+    <div class="card" id="score-card">
+      <p style="font-size:13px;line-height:1.65;color:var(--text2)" id="score-note"></p>
+    </div>
+    <p class="sub" style="font-size:15px">Majority works when voters are independent. Now: <strong style="color:var(--text)">what breaks it entirely?</strong></p>
+    <button class="btn btn-primary" onclick="showStage('cascade')">What breaks it →</button>
+  </div>
+
+  <!-- ════ SCREEN 6: CASCADE VISUALIZATION ════ -->
+  <div id="s-cascade" class="screen">
+    <div>
+      <p class="eyebrow">The failure mode</p>
+      <h2 class="hed" style="margin-top:8px;font-size:28px">When people stop looking.</h2>
+    </div>
+    <p class="sub" style="font-size:15px">Majority only works if the votes are independent. What if people copy each other instead of gathering real evidence?</p>
+    <div class="viz-row">
+
+      <!-- Independent panel -->
+      <div class="viz-panel independent">
+        <p class="viz-label">Independent</p>
+        <svg viewBox="0 0 120 196" width="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <marker id="m-ind" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,1 L0,5 L5,3 z" fill="#6b5ef8" opacity="0.7"/>
+            </marker>
+          </defs>
+          <!-- Urn (right side, vertically centered) -->
+          <rect x="82" y="76" width="30" height="38" rx="5"
+                fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="97" y="98" text-anchor="middle" font-size="8"
+                fill="#6b5ef8" font-weight="700">URN</text>
+          <!-- 5 persons at cx=22, spread vertically -->
+          <circle cx="22" cy="20"  r="13" fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="22" y="24"  text-anchor="middle" font-size="9" fill="#6b5ef8" font-weight="700">A</text>
+          <circle cx="22" cy="56"  r="13" fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="22" y="60"  text-anchor="middle" font-size="9" fill="#6b5ef8" font-weight="700">B</text>
+          <circle cx="22" cy="95"  r="13" fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="22" y="99"  text-anchor="middle" font-size="9" fill="#6b5ef8" font-weight="700">C</text>
+          <circle cx="22" cy="134" r="13" fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="22" y="138" text-anchor="middle" font-size="9" fill="#6b5ef8" font-weight="700">D</text>
+          <circle cx="22" cy="172" r="13" fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="22" y="176" text-anchor="middle" font-size="9" fill="#6b5ef8" font-weight="700">E</text>
+          <!-- Arrows from each person to urn -->
+          <line x1="36" y1="22"  x2="80" y2="82"  stroke="#6b5ef8" stroke-width="1.2" stroke-opacity="0.55" marker-end="url(#m-ind)"/>
+          <line x1="36" y1="56"  x2="80" y2="87"  stroke="#6b5ef8" stroke-width="1.2" stroke-opacity="0.55" marker-end="url(#m-ind)"/>
+          <line x1="36" y1="95"  x2="80" y2="95"  stroke="#6b5ef8" stroke-width="1.2" stroke-opacity="0.55" marker-end="url(#m-ind)"/>
+          <line x1="36" y1="134" x2="80" y2="103" stroke="#6b5ef8" stroke-width="1.2" stroke-opacity="0.55" marker-end="url(#m-ind)"/>
+          <line x1="36" y1="172" x2="80" y2="110" stroke="#6b5ef8" stroke-width="1.2" stroke-opacity="0.55" marker-end="url(#m-ind)"/>
+        </svg>
+        <p class="viz-caption">5 people, 5 independent looks at the urn.</p>
+      </div>
+
+      <!-- Cascade panel -->
+      <div class="viz-panel cascade-p">
+        <p class="viz-label">Cascade</p>
+        <svg viewBox="0 0 120 196" width="100%" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <marker id="m-cas" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,1 L0,5 L5,3 z" fill="#f0955a"/>
+            </marker>
+            <marker id="m-cas-ind" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+              <path d="M0,1 L0,5 L5,3 z" fill="#6b5ef8"/>
+            </marker>
+          </defs>
+          <!-- Urn at top -->
+          <rect x="42" y="4" width="36" height="26" rx="5"
+                fill="rgba(240,149,90,0.12)" stroke="#f0955a" stroke-width="1.5"/>
+          <text x="60" y="21" text-anchor="middle" font-size="8"
+                fill="#f0955a" font-weight="700">URN</text>
+          <!-- Arrow: urn → A (A looked at urn directly) -->
+          <line x1="60" y1="31" x2="60" y2="47" stroke="#6b5ef8" stroke-width="1.5" marker-end="url(#m-cas-ind)"/>
+          <!-- Person A -->
+          <circle cx="60" cy="62" r="13" fill="rgba(107,94,248,0.12)" stroke="#6b5ef8" stroke-width="1.5"/>
+          <text x="60" y="66" text-anchor="middle" font-size="9" fill="#6b5ef8" font-weight="700">A</text>
+          <!-- Arrow: A → B -->
+          <line x1="60" y1="76" x2="60" y2="90" stroke="#f0955a" stroke-width="1.5" marker-end="url(#m-cas)"/>
+          <!-- Person B (copied A) -->
+          <circle cx="60" cy="104" r="13" fill="rgba(240,149,90,0.1)" stroke="#f0955a" stroke-width="1.5"/>
+          <text x="60" y="108" text-anchor="middle" font-size="9" fill="#f0955a" font-weight="700">B</text>
+          <!-- Arrow: B → C -->
+          <line x1="60" y1="118" x2="60" y2="132" stroke="#f0955a" stroke-width="1.5" marker-end="url(#m-cas)"/>
+          <!-- Person C (copied B) -->
+          <circle cx="60" cy="146" r="13" fill="rgba(240,149,90,0.1)" stroke="#f0955a" stroke-width="1.5"/>
+          <text x="60" y="150" text-anchor="middle" font-size="9" fill="#f0955a" font-weight="700">C</text>
+          <!-- Trailing arrow / "etc." -->
+          <line x1="60" y1="160" x2="60" y2="174" stroke="#f0955a" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.6"/>
+          <text x="60" y="188" text-anchor="middle" font-size="10" fill="#f0955a" opacity="0.6">D, E…</text>
+        </svg>
+        <p class="viz-caption">Only A looked at the urn. B, C, D, E copied the person before them.</p>
+      </div>
+
+    </div>
+    <div class="card card-warm">
+      <p style="font-size:13px;line-height:1.65">In a cascade, a 5–0 vote is <em>not</em> five independent signals. It's <strong style="color:var(--text)">one signal, repeated four times</strong>. Majority still reads "overwhelming consensus." The evidence is much weaker than it looks.</p>
+    </div>
+    <p class="sub" style="font-size:14px">Stock bubbles. Fashion trends. Viral opinions. All cascades — confidence without proportional evidence.</p>
+    <button class="btn btn-primary" onclick="showStage('ai')">So where does AI fit? →</button>
+  </div>
+
+  <!-- ════ SCREEN 7: AI ANGLE ════ -->
+  <div id="s-ai" class="screen">
+    <div>
+      <p class="eyebrow">The real risk</p>
+      <h2 class="hed" style="margin-top:8px;font-size:28px">Not laziness. Cascade.</h2>
+    </div>
+    <p class="sub" style="font-size:15px">The concern about AI isn't that it makes people lazy. It's a structural problem that looks exactly like a cascade.</p>
+    <div class="scenario-card echo">
+      <p class="scenario-tag">The echo chamber</p>
+      <p class="scenario-title">10 coworkers, same AI, same answer</p>
+      <p class="scenario-body">Everyone asks the same question. They compare notes: "All 10 of us got the same recommendation!" They treat this as strong consensus from 10 independent minds.</p>
+      <p class="scenario-verdict">It's one signal, echoed 10 times.</p>
+    </div>
+    <div class="scenario-card signal">
+      <p class="scenario-tag">Using it as a tool</p>
+      <p class="scenario-title">AI explains it — you decide</p>
+      <p class="scenario-body">You ask AI to lay out the pros and cons. You read it, weigh it, push back on it, and form your own view. The AI informed your thinking.</p>
+      <p class="scenario-verdict">You're the independent signal.</p>
+    </div>
+    <button class="btn btn-primary" onclick="showStage('takeaway')">The rule →</button>
+  </div>
+
+  <!-- ════ SCREEN 8: TAKEAWAY ════ -->
+  <div id="s-takeaway" class="screen">
+    <div>
+      <p class="eyebrow">The rule</p>
+      <h2 class="hed" style="margin-top:8px">Stay a signal.</h2>
+    </div>
+    <div class="takeaway-list">
+      <div class="takeaway-item">
+        <div class="takeaway-dot"></div>
+        <p class="takeaway-text">Use AI to understand things better. Stay the one doing the thinking.</p>
+      </div>
+      <div class="takeaway-item">
+        <div class="takeaway-dot"></div>
+        <p class="takeaway-text">The tool isn't the problem. Outsourcing your judgment is.</p>
+      </div>
+      <div class="takeaway-item">
+        <div class="takeaway-dot"></div>
+        <p class="takeaway-text">Next time you see strong consensus: are these independent signals, or is everyone copying the same source?</p>
+      </div>
+    </div>
+    <div class="card card-accent">
+      <p style="font-size:13px;line-height:1.65">You played the urn game instead of taking anyone's word for it. That's the right direction — you engaged with the idea, not just the answer.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px">
+      <button class="btn btn-primary" onclick="playAgain()">Play again</button>
+      <button class="btn btn-ghost" onclick="shareIdea()">Copy shareable summary</button>
+    </div>
+    <p class="share-confirm" id="share-confirm">Copied to clipboard ✓</p>
+  </div>
+
+</div>
+<script>
+// ═══════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const S = {
+  round: 0,
+  roundResults: [],
+  choiceEnabled: false,
+  choiceTimer: null,
+};
+
+// ═══════════════════════════════════════════════════════
+// ROUND DATA
+// Round 0: 4-1, majority correct
+// Round 1: 3-2, majority correct (close call)
+// Round 2: 3-2, majority WRONG (urn=red, majority=blue)
+// ═══════════════════════════════════════════════════════
+const ROUNDS = [
+  { urnActual: 'red',  votes: shuffle(['red','red','red','red','blue'])  },
+  { urnActual: 'blue', votes: shuffle(['blue','blue','blue','red','red']) },
+  { urnActual: 'red',  votes: shuffle(['blue','blue','blue','red','red']) },
+];
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showStage(id, roundIdx) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('s-' + id);
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+  el.classList.add('active');
+  if (id === 'game') {
+    renderGame(typeof roundIdx === 'number' ? roundIdx : S.round);
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// GAME
+// ═══════════════════════════════════════════════════════
+function startGame() {
+  S.round = 0;
+  S.roundResults = [];
+  showStage('game', 0);
+}
+
+function renderGame(roundIdx) {
+  S.round = roundIdx;
+  S.choiceEnabled = false;
+  clearTimeout(S.choiceTimer);
+
+  const round = ROUNDS[roundIdx];
+
+  // Round label + progress dots
+  document.getElementById('game-label').textContent = 'Round ' + (roundIdx + 1) + ' of 3';
+  document.getElementById('game-sub').textContent =
+    roundIdx === 2
+      ? 'Watch carefully — something is different this time.'
+      : 'Watch the votes come in. Then decide.';
+
+  for (let i = 0; i < 3; i++) {
+    const d = document.getElementById('rd' + i);
+    d.className = 'round-dot' + (i < roundIdx ? ' done' : i === roundIdx ? ' active' : '');
+  }
+
+  // Build vote bubbles
+  const grid = document.getElementById('vote-grid');
+  grid.innerHTML = '';
+  const labels = ['A', 'B', 'C', 'D', 'E'];
+  round.votes.forEach(function(vote, i) {
+    const b = document.createElement('div');
+    b.className = 'vote-bubble ' + vote + '-vote';
+    b.innerHTML =
+      '<span class="v-id">' + labels[i] + '</span>' +
+      '<span class="v-vote">' + (vote === 'red' ? '🔴' : '🔵') + '</span>';
+    grid.appendChild(b);
+  });
+
+  // Reset choice row (fade-hidden)
+  const choiceRow = document.getElementById('choice-row');
+  choiceRow.classList.remove('visible');
+  document.getElementById('btn-red').disabled  = false;
+  document.getElementById('btn-blue').disabled = false;
+
+  // Reset reveal + next button
+  const revealCard = document.getElementById('reveal-card');
+  revealCard.classList.remove('show', 'correct-reveal', 'wrong-reveal');
+  document.getElementById('btn-next').style.display = 'none';
+
+  // Show choice buttons after vote animation completes
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const delay = reducedMotion ? 50 : 2200;
+  S.choiceTimer = setTimeout(function() {
+    choiceRow.classList.add('visible');
+    S.choiceEnabled = true;
+  }, delay);
+}
+
+function handleChoice(choice) {
+  if (!S.choiceEnabled) return;
+  S.choiceEnabled = false;
+
+  document.getElementById('btn-red').disabled  = true;
+  document.getElementById('btn-blue').disabled = true;
+
+  const round = ROUNDS[S.round];
+  const urnActual   = round.urnActual;
+  const votes       = round.votes;
+  const redCount    = votes.filter(function(v) { return v === 'red'; }).length;
+  const blueCount   = 5 - redCount;
+  const majorityVote     = redCount >= blueCount ? 'red' : 'blue';
+  const majorityCorrect  = majorityVote === urnActual;
+  const userCorrect      = choice === urnActual;
+  const followedMajority = choice === majorityVote;
+
+  S.roundResults.push({
+    userChoice:      choice,
+    urnActual:       urnActual,
+    majorityVote:    majorityVote,
+    majorityCorrect: majorityCorrect,
+    userCorrect:     userCorrect,
+  });
+
+  // Build reveal
+  const revealCard = document.getElementById('reveal-card');
+  revealCard.classList.add('show');
+  revealCard.classList.add(userCorrect ? 'correct-reveal' : 'wrong-reveal');
+
+  const urnLabel = function(c) { return c === 'red' ? '🔴 Red' : '🔵 Blue'; };
+  const countLabel = redCount + '–' + blueCount + ' for ' + urnLabel(majorityVote);
+
+  document.getElementById('reveal-verdict').innerHTML =
+    '<span class="verdict-icon">' + (userCorrect ? '✓' : '✗') + '</span>' +
+    '<span>Urn was <strong>' + urnLabel(urnActual) + '</strong> — you were ' +
+    (userCorrect ? 'right' : 'wrong') + '</span>';
+
+  var expl;
+  if (S.round === 2) {
+    expl = 'Majority said ' + (majorityVote === 'red' ? 'Red' : 'Blue') +
+           ' (' + countLabel + '), but the urn was actually ' + (urnActual === 'red' ? 'Red' : 'Blue') + '. ' +
+           'This is the key moment: following the majority was still the correct strategy. ' +
+           'Randomness occasionally beats even the optimal approach. The strategy isn\'t wrong because it lost once.';
+  } else if (followedMajority) {
+    expl = 'Majority said ' + (majorityVote === 'red' ? 'Red' : 'Blue') + ' (' + countLabel + '). ' +
+           'You followed the majority — the statistically optimal choice when signals are independent.';
+  } else {
+    expl = 'Majority said ' + (majorityVote === 'red' ? 'Red' : 'Blue') + ' (' + countLabel + ') ' +
+           'but you went the other way. Going against independent evidence is usually a mistake in the long run.';
+  }
+  document.getElementById('reveal-expl').textContent = expl;
+
+  document.getElementById('btn-next').style.display = 'flex';
+}
+
+function afterRound() {
+  if (S.round === 0) {
+    showStage('r1');
+  } else if (S.round === 1) {
+    showStage('r2');
+  } else {
+    // Show score screen
+    const majorityCorrectCount = S.roundResults.filter(function(r) { return r.majorityCorrect; }).length;
+    document.getElementById('score-num').textContent = majorityCorrectCount + '/3';
+
+    var note;
+    if (majorityCorrectCount === 3) {
+      note = 'Majority got all 3 right — when signals are truly independent, majority vote is remarkably reliable.';
+    } else {
+      note = 'Round 3 was the key: majority was wrong, but following it was still the correct strategy. Optimal doesn\'t mean invincible.';
+    }
+    document.getElementById('score-note').textContent = note;
+    showStage('score');
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// SHARE
+// ═══════════════════════════════════════════════════════
+function shareIdea() {
+  var text = [
+    'The Signal & The Crowd',
+    '',
+    'Majority vote is optimal when voters are independent and informed.',
+    'Each vote is real evidence — majority aggregates it.',
+    '',
+    'But when people copy each other (information cascade), majority',
+    'can be confidently wrong. It\'s one signal repeated, not many',
+    'signals combined.',
+    '',
+    'The AI risk isn\'t laziness. If everyone outsources judgment to AI,',
+    '"consensus" becomes one signal echoed everywhere.',
+    '',
+    'Use AI to think better — stay the independent signal.',
+  ].join('\n');
+
+  navigator.clipboard.writeText(text).then(function() {
+    var el = document.getElementById('share-confirm');
+    el.style.display = 'block';
+    el.textContent = 'Copied to clipboard ✓';
+    setTimeout(function() { el.style.display = 'none'; }, 3000);
+  }).catch(function() {
+    var el = document.getElementById('share-confirm');
+    el.style.display = 'block';
+    el.textContent = 'Copy failed — try a different browser';
+    setTimeout(function() { el.style.display = 'none'; }, 3000);
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// PLAY AGAIN
+// ═══════════════════════════════════════════════════════
+function playAgain() {
+  ROUNDS[0].votes = shuffle(['red','red','red','red','blue']);
+  ROUNDS[1].votes = shuffle(['blue','blue','blue','red','red']);
+  ROUNDS[2].votes = shuffle(['blue','blue','blue','red','red']);
+  S.round = 0;
+  S.roundResults = [];
+  showStage('game', 0);
+}
+</script>
+</body>
+</html>
