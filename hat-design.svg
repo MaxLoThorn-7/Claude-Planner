@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+  <defs>
+    <path id="arcTop" d="M 116,180 A 142,142 0 0 1 384,180" fill="none"/>
+    <path id="arcBottom" d="M 130,330 A 128,128 0 0 0 370,330" fill="none"/>
+  </defs>
+
+  <!-- outer satin-stitch ring (single bold border, embroidery-friendly) -->
+  <circle cx="250" cy="250" r="192" fill="none" stroke="#1a1a1a" stroke-width="16"/>
+  <circle cx="250" cy="250" r="174" fill="none" stroke="#D97757" stroke-width="6"/>
+
+  <!-- inner fill -->
+  <circle cx="250" cy="250" r="166" fill="#F4EEE6"/>
+
+  <!-- arched top text: CLAUDE CODE -->
+  <text font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="34" letter-spacing="5" fill="#1a1a1a">
+    <textPath href="#arcTop" startOffset="50%" text-anchor="middle">CLAUDE CODE</textPath>
+  </text>
+
+  <!-- terminal prompt mark, center -->
+  <g transform="translate(250,262)">
+    <rect x="-88" y="-44" width="176" height="88" rx="14" fill="#1a1a1a"/>
+    <rect x="-78" y="-34" width="156" height="68" rx="8" fill="#F4EEE6"/>
+    <text x="-60" y="14" font-family="Courier New, monospace" font-weight="700" font-size="52" fill="#D97757">&gt;_</text>
+  </g>
+
+  <!-- arched bottom text -->
+  <text font-family="Arial, sans-serif" font-weight="700" font-size="20" letter-spacing="4" fill="#D97757">
+    <textPath href="#arcBottom" startOffset="50%" text-anchor="middle">SHIP HAPPENS</textPath>
+  </text>
+</svg>
