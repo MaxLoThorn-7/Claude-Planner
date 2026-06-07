@@ -342,16 +342,27 @@
     </div>
   </div>
 
+  <!-- ════ SCREEN 6B: TRAINER PLAN — PICK DAY ════ -->
+  <div id="s-trainer-pick" class="screen">
+    <div>
+      <p class="eyebrow">Trainer's plan · home version</p>
+      <h2 class="hed" style="margin-top:6px">Which session?</h2>
+      <p class="sub" style="margin-top:7px;font-size:15px">Bands &amp; two 10 lb dumbbells</p>
+    </div>
+    <div id="plan-day-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    <button class="btn btn-ghost" onclick="showScreen('land')">← Back</button>
+  </div>
+
   <!-- ════ SCREEN 7: TRAINER PLAN PREVIEW ════ -->
   <div id="s-trainer" class="screen">
     <div>
       <p class="eyebrow">Trainer's plan · home version</p>
-      <h2 class="hed" style="margin-top:6px">Today's session.</h2>
-      <p class="sub" style="margin-top:7px;font-size:15px">Bands &amp; 10 lb dumbbells · 3×10 each · 90s rest</p>
+      <h2 class="hed" style="margin-top:6px" id="plan-day-title">Today's session.</h2>
+      <p class="sub" style="margin-top:7px;font-size:15px" id="plan-day-sub">Bands &amp; 10 lb dumbbells · 90s rest</p>
     </div>
     <div class="wl" id="plan-list"></div>
     <button class="btn btn-primary" onclick="startPlanExercise(0)">Start →</button>
-    <button class="btn btn-ghost" onclick="showScreen('land')">← Back</button>
+    <button class="btn btn-ghost" onclick="showScreen('trainer-pick')">← Choose a different day</button>
   </div>
 
   <!-- ════ SCREEN 8: PLAN EXERCISE ════ -->
@@ -628,75 +639,176 @@ const DB = [
 
 // ═══════════════════════════════════════════
 // TRAINER'S PLAN — home equivalents
-// Gym: DB shoulder press / lat pulldown / leg press / DB row /
-//      leg extension / hamstring curl / cable tricep pushdown
 // Equipment needed: resistance bands + 2 × 10 lb dumbbells
 // ═══════════════════════════════════════════
-const TRAINER_PLAN = [
-  {
-    id: 'tp_shoulder_press',
-    name: 'Seated DB Shoulder Press',
-    gymName: 'DB Seated Shoulder Press',
-    eyebrow: 'Shoulders',
-    desc: 'Sit upright on a chair. Dumbbells at shoulder height, palms forward. Press both overhead until arms fully extend. Lower with control back to shoulders.',
-    muscles: 'shoulders · triceps · upper traps',
-    sets: 3, reps: 10, restSecs: 90,
+const TRAINER_PLANS = {
+  tuesday: {
+    label: 'Tuesday — Low Volume Heavy',
+    sub: '7 exercises · compound lifts',
+    exercises: [
+      {
+        id: 'tp_shoulder_press',
+        name: 'Seated DB Shoulder Press',
+        gymName: 'DB Seated Shoulder Press',
+        eyebrow: 'Shoulders',
+        desc: 'Sit upright on a chair. Dumbbells at shoulder height, palms forward. Press both overhead until arms fully extend. Lower with control back to shoulders.',
+        muscles: 'shoulders · triceps · upper traps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_lat_pull',
+        name: 'Band Lat Pulldown',
+        gymName: 'Lat Pulldown',
+        eyebrow: 'Back',
+        desc: 'Loop band over a door frame or pull-up bar. Kneel or sit. Grab both ends with arms extended overhead. Pull down to upper chest driving elbows toward your hips. Return slowly.',
+        muscles: 'lats · biceps · rear deltoids',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_goblet_squat',
+        name: 'Goblet Squat',
+        gymName: 'Seated Leg Press',
+        eyebrow: 'Legs',
+        desc: 'Hold one 10 lb dumbbell vertically at your chest. Feet shoulder-width, toes slightly out. Squat as deep as comfortable, chest up. Drive back up through your heels.',
+        muscles: 'quads · glutes · hamstrings',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_db_row',
+        name: 'Single-Arm Dumbbell Row',
+        gymName: 'Dumbbell Row',
+        eyebrow: 'Back',
+        desc: 'Brace one hand on a chair or table. Hold 10 lb dumbbell in the other. Let shoulder drop, then pull dumbbell toward your hip driving elbow past your torso. Both sides = one set.',
+        muscles: 'lats · rhomboids · biceps',
+        sets: 2, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_leg_ext',
+        name: 'Band Leg Extension',
+        gymName: 'Machine Leg Extension',
+        eyebrow: 'Quads',
+        desc: 'Sit on a chair. Loop band around one ankle, anchor the other end under the front chair legs. Extend your knee until the leg is straight. Squeeze at the top. All reps one leg, then switch.',
+        muscles: 'quads',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_ham_curl',
+        name: 'Band Hamstring Curl',
+        gymName: 'Seated Hamstring Curl',
+        eyebrow: 'Hamstrings',
+        desc: 'Lie face down. Loop band around one ankle, anchor the other end to something stable near the floor (table leg, couch foot). Curl your heel toward your glute. All reps one leg, then switch.',
+        muscles: 'hamstrings',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_tricep',
+        name: 'Band Tricep Pushdown',
+        gymName: 'Cable Straight Bar Tricep Pushdown',
+        eyebrow: 'Triceps',
+        desc: 'Loop band over the top of a door (close the door to anchor it). Face the door, grab band with both hands at chest height, elbows pinned to sides. Push straight down until arms fully extend.',
+        muscles: 'triceps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+    ],
   },
-  {
-    id: 'tp_lat_pull',
-    name: 'Band Lat Pulldown',
-    gymName: 'Lat Pulldown',
-    eyebrow: 'Back',
-    desc: 'Loop band over a door frame or pull-up bar. Kneel or sit. Grab both ends with arms extended overhead. Pull down to upper chest driving elbows toward your hips. Return slowly.',
-    muscles: 'lats · biceps · rear deltoids',
-    sets: 3, reps: 10, restSecs: 90,
+
+  saturday: {
+    label: 'Saturday — Low Volume Accessory',
+    sub: '10 exercises · arms, shoulders & core',
+    exercises: [
+      {
+        id: 'tp2_incline_press',
+        name: 'Decline Push-Ups',
+        gymName: 'DB Incline Bench Press',
+        eyebrow: 'Chest',
+        desc: 'Hands on the floor, feet propped on a couch cushion or chair seat. Lower your chest toward the floor, push back up. The angle targets the upper chest the way an incline press does.',
+        muscles: 'upper chest · front shoulders · triceps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_reverse_fly',
+        name: 'Bent-Over DB Reverse Fly',
+        gymName: 'Machine Seated Reverse Fly',
+        eyebrow: 'Shoulders',
+        desc: 'Hold a dumbbell in each hand, hinge forward at the hips with a flat back, knees soft. Raise both arms straight out to the sides, squeezing shoulder blades together. Lower with control.',
+        muscles: 'rear deltoids · rhomboids · upper back',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_chest_press',
+        name: 'Dumbbell Floor Press',
+        gymName: 'Machine Seated Chest Press',
+        eyebrow: 'Chest',
+        desc: 'Lie on your back, knees bent. Dumbbells at chest height with upper arms resting on the floor. Press straight up until arms extend, lower back down with control.',
+        muscles: 'chest · shoulders · triceps',
+        sets: 1, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_hammer_curl',
+        name: 'Dumbbell Hammer Curl',
+        gymName: 'Dumbbell Hammer Curl',
+        eyebrow: 'Arms',
+        desc: 'Stand holding dumbbells with palms facing each other (neutral grip). Curl both up toward your shoulders without rotating your wrists. Lower slowly.',
+        muscles: 'biceps · forearms',
+        sets: 2, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_lat_raise',
+        name: 'Dumbbell Lateral Raise',
+        gymName: 'Full ROM Lat Raise',
+        eyebrow: 'Shoulders',
+        desc: 'Stand holding a dumbbell in each hand at your sides. Raise both arms out to shoulder height, leading with your elbows, slight bend in arms. Lower slowly through the full range.',
+        muscles: 'side deltoids · upper traps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_incline_curl',
+        name: 'Reclined Dumbbell Curl',
+        gymName: 'Dumbbell Incline Bicep Curl',
+        eyebrow: 'Arms',
+        desc: 'Sit and lean back against a couch arm or stacked pillows at an incline, arms hanging straight down. Curl the dumbbells up toward your shoulders. The recline deepens the stretch on the biceps.',
+        muscles: 'biceps',
+        sets: 2, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_shrug',
+        name: 'Dumbbell Shrug',
+        gymName: 'Dumbbell Shrug',
+        eyebrow: 'Traps',
+        desc: 'Stand holding a dumbbell in each hand at your sides. Shrug your shoulders straight up toward your ears, hold a beat, lower with control. Straight up and down — don\'t roll them.',
+        muscles: 'upper trapezius',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_crunch',
+        name: 'Weighted Dumbbell Crunch',
+        gymName: 'Seated Machine Ab Crunch',
+        eyebrow: 'Core',
+        desc: 'Lie on your back, knees bent, feet flat. Hold one dumbbell against your chest. Crunch up, lifting your shoulder blades off the floor, squeeze, then lower with control.',
+        muscles: 'abs · obliques',
+        sets: 2, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_calf_raise',
+        name: 'Single-Leg Calf Raise (Step)',
+        gymName: 'Single Leg Deficit Calf Raise',
+        eyebrow: 'Calves',
+        desc: 'Stand on a step or sturdy ledge on one foot, heel hanging off the edge. Holding a wall for balance, lower your heel below the step, then rise as high as possible onto your toes.',
+        muscles: 'calves',
+        sets: 3, reps: 'AMRAP', repsLabel: 'as many as you can', restSecs: 90,
+      },
+      {
+        id: 'tp2_neck',
+        name: 'Yes, No, Maybe Neck',
+        gymName: 'Yes, No, Maybe Neck',
+        eyebrow: 'Neck',
+        desc: 'Seated or standing, tall posture. Slowly nod "yes" (up and down), then shake "no" (side to side), then tilt "maybe" (ear toward shoulder, side to side). Slow and controlled — no equipment needed.',
+        muscles: 'neck · cervical stabilizers',
+        sets: 1, reps: 10, repsLabel: '10 reps each direction', restSecs: 90,
+      },
+    ],
   },
-  {
-    id: 'tp_goblet_squat',
-    name: 'Goblet Squat',
-    gymName: 'Seated Leg Press',
-    eyebrow: 'Legs',
-    desc: 'Hold one 10 lb dumbbell vertically at your chest. Feet shoulder-width, toes slightly out. Squat as deep as comfortable, chest up. Drive back up through your heels.',
-    muscles: 'quads · glutes · hamstrings',
-    sets: 3, reps: 10, restSecs: 90,
-  },
-  {
-    id: 'tp_db_row',
-    name: 'Single-Arm Dumbbell Row',
-    gymName: 'Dumbbell Row',
-    eyebrow: 'Back',
-    desc: 'Brace one hand on a chair or table. Hold 10 lb dumbbell in the other. Let shoulder drop, then pull dumbbell toward your hip driving elbow past your torso. Both sides = one set.',
-    muscles: 'lats · rhomboids · biceps',
-    sets: 2, reps: 10, restSecs: 90,
-  },
-  {
-    id: 'tp_leg_ext',
-    name: 'Band Leg Extension',
-    gymName: 'Machine Leg Extension',
-    eyebrow: 'Quads',
-    desc: 'Sit on a chair. Loop band around one ankle, anchor the other end under the front chair legs. Extend your knee until the leg is straight. Squeeze at the top. All reps one leg, then switch.',
-    muscles: 'quads',
-    sets: 3, reps: 10, restSecs: 90,
-  },
-  {
-    id: 'tp_ham_curl',
-    name: 'Band Hamstring Curl',
-    gymName: 'Seated Hamstring Curl',
-    eyebrow: 'Hamstrings',
-    desc: 'Lie face down. Loop band around one ankle, anchor the other end to something stable near the floor (table leg, couch foot). Curl your heel toward your glute. All reps one leg, then switch.',
-    muscles: 'hamstrings',
-    sets: 3, reps: 10, restSecs: 90,
-  },
-  {
-    id: 'tp_tricep',
-    name: 'Band Tricep Pushdown',
-    gymName: 'Cable Tricep Pushdown',
-    eyebrow: 'Triceps',
-    desc: 'Loop band over the top of a door (close the door to anchor it). Face the door, grab band with both hands at chest height, elbows pinned to sides. Push straight down until arms fully extend.',
-    muscles: 'triceps',
-    sets: 3, reps: 10, restSecs: 90,
-  },
-];
+};
 
 // ═══════════════════════════════════════════
 // QUESTIONS
@@ -767,6 +879,7 @@ const S = {
   numRounds: 1,
   circuitLen: 0,
   warmupCount: 0,
+  planDay: null,
   planExIdx: 0,
   planSetIdx: 0,
 };
@@ -1128,13 +1241,34 @@ function goHome()          { clearInterval(S.timerInterval); clearInterval(S.res
 // ═══════════════════════════════════════════
 // TRAINER'S PLAN FLOW
 // ═══════════════════════════════════════════
+function planExercises() {
+  return TRAINER_PLANS[S.planDay].exercises;
+}
+
 function openTrainerPlan() {
-  document.getElementById('plan-list').innerHTML = TRAINER_PLAN.map((e, i) => `
+  document.getElementById('plan-day-list').innerHTML = Object.keys(TRAINER_PLANS).map(key => {
+    const day = TRAINER_PLANS[key];
+    return `
+      <div class="wi" style="cursor:pointer" onclick="selectPlanDay('${key}')">
+        <div class="wi-name">${day.label}</div>
+        <div class="wi-tag">${day.sub}</div>
+      </div>
+    `;
+  }).join('');
+  showScreen('trainer-pick');
+}
+
+function selectPlanDay(key) {
+  S.planDay = key;
+  const day = TRAINER_PLANS[key];
+  document.getElementById('plan-day-title').textContent = day.label;
+  document.getElementById('plan-day-sub').textContent   = `${day.sub} · 90s rest`;
+  document.getElementById('plan-list').innerHTML = day.exercises.map((e, i) => `
     <div class="wi">
       <div class="wi-n">${i + 1}</div>
       <div class="wi-name">${e.name}</div>
       <div class="wi-tag">${e.eyebrow}</div>
-      <div class="wi-dur">${e.sets}×${e.reps}</div>
+      <div class="wi-dur">${e.sets}×${e.repsLabel || e.reps}</div>
     </div>
   `).join('');
   showScreen('trainer');
@@ -1149,13 +1283,15 @@ function startPlanExercise(exIdx) {
 }
 
 function renderPlanExercise() {
-  const ex      = TRAINER_PLAN[S.planExIdx];
+  const exs     = planExercises();
+  const ex      = exs[S.planExIdx];
   const setNum  = S.planSetIdx + 1;
+  const repsText  = ex.repsLabel || `${ex.reps} reps`;
   const isLastSet = setNum === ex.sets;
-  const isLastEx  = S.planExIdx === TRAINER_PLAN.length - 1;
+  const isLastEx  = S.planExIdx === exs.length - 1;
 
-  document.getElementById('plan-ex-prog').textContent   = `Exercise ${S.planExIdx + 1} of ${TRAINER_PLAN.length}`;
-  document.getElementById('plan-set-label').textContent = `Set ${setNum} of ${ex.sets} · ${ex.reps} reps`;
+  document.getElementById('plan-ex-prog').textContent   = `Exercise ${S.planExIdx + 1} of ${exs.length}`;
+  document.getElementById('plan-set-label').textContent = `Set ${setNum} of ${ex.sets} · ${repsText}`;
   document.getElementById('plan-ex-name').textContent   = ex.name;
   document.getElementById('plan-ex-desc').textContent   = ex.desc;
   document.getElementById('plan-ex-muscles').innerHTML  = `<b>Works:</b> ${ex.muscles}`;
@@ -1168,15 +1304,17 @@ function renderPlanExercise() {
 }
 
 function donePlanSet() {
-  const ex        = TRAINER_PLAN[S.planExIdx];
+  const exs       = planExercises();
+  const ex        = exs[S.planExIdx];
+  const repsText  = ex.repsLabel || `${ex.reps} reps`;
   const isLastSet = (S.planSetIdx + 1) >= ex.sets;
-  const isLastEx  = S.planExIdx >= TRAINER_PLAN.length - 1;
+  const isLastEx  = S.planExIdx >= exs.length - 1;
 
   if (isLastSet && isLastEx) { finishPlan(); return; }
 
   const nextLabel = isLastSet
-    ? `Next: <strong>${TRAINER_PLAN[S.planExIdx + 1].name}</strong>`
-    : `Next: <strong>Set ${S.planSetIdx + 2} of ${ex.sets} · ${ex.reps} reps</strong>`;
+    ? `Next: <strong>${exs[S.planExIdx + 1].name}</strong>`
+    : `Next: <strong>Set ${S.planSetIdx + 2} of ${ex.sets} · ${repsText}</strong>`;
 
   document.getElementById('plan-rest-n').textContent  = ex.restSecs;
   document.getElementById('plan-next-up').innerHTML   = nextLabel;
@@ -1205,20 +1343,21 @@ function advancePlan(movingToNextEx) {
 
 function skipPlanRest() {
   clearInterval(planRestInterval);
-  const ex = TRAINER_PLAN[S.planExIdx];
+  const ex = planExercises()[S.planExIdx];
   advancePlan((S.planSetIdx + 1) >= ex.sets);
 }
 
 function skipPlanExercise() {
   clearInterval(planRestInterval);
-  if (S.planExIdx >= TRAINER_PLAN.length - 1) finishPlan();
+  const exs = planExercises();
+  if (S.planExIdx >= exs.length - 1) finishPlan();
   else startPlanExercise(S.planExIdx + 1);
 }
 
 function finishPlan() {
   clearInterval(planRestInterval);
   const mins = S.startMs ? Math.round((Date.now() - S.startMs) / 60000) : 0;
-  document.getElementById('done-exercises').textContent = TRAINER_PLAN.length;
+  document.getElementById('done-exercises').textContent = planExercises().length;
   document.getElementById('done-mins').textContent      = Math.max(1, mins);
   S.startMs = null;
   showScreen('done');
