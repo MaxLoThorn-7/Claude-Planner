@@ -874,6 +874,8 @@ const S = {
   restInterval: null,
   secsLeft: 0,
   secsTotal: 0,
+  timerEndAt: 0,
+  pausedRemainMs: 0,
   paused: false,
   startMs: null,
   numRounds: 1,
@@ -1141,17 +1143,25 @@ const CIRC = 2 * Math.PI * 82; // r=82
 
 function startTimer(secs) {
   clearInterval(S.timerInterval);
-  S.secsLeft  = secs;
   S.secsTotal = secs;
+  S.secsLeft  = secs;
   S.paused    = false;
+  S.timerEndAt = Date.now() + secs * 1000;
   tickTimer();
+  // Re-derive secsLeft from the wall clock on every tick (rather than
+  // just decrementing a counter) so the countdown can't drift or "catch up" —
+  // setInterval ticks aren't guaranteed to land exactly 1000ms apart, and a
+  // naive decrement-per-tick compounds that error into a visibly uneven rhythm.
   S.timerInterval = setInterval(() => {
-    if (!S.paused) {
-      S.secsLeft--;
+    if (S.paused) return;
+    const remainingMs = S.timerEndAt - Date.now();
+    const secsLeft = Math.max(0, Math.ceil(remainingMs / 1000));
+    if (secsLeft !== S.secsLeft) {
+      S.secsLeft = secsLeft;
       tickTimer();
-      if (S.secsLeft <= 0) { clearInterval(S.timerInterval); onTimerEnd(); }
     }
-  }, 1000);
+    if (remainingMs <= 0) { clearInterval(S.timerInterval); onTimerEnd(); }
+  }, 200);
 }
 
 function tickTimer() {
@@ -1175,6 +1185,11 @@ function onTimerEnd() {
 
 function togglePause() {
   S.paused = !S.paused;
+  if (S.paused) {
+    S.pausedRemainMs = S.timerEndAt - Date.now();
+  } else {
+    S.timerEndAt = Date.now() + S.pausedRemainMs;
+  }
   document.getElementById('btn-pause').textContent = S.paused ? 'Resume' : 'Pause';
 }
 
@@ -1203,16 +1218,21 @@ function startRest() {
   document.getElementById('rest-n').textContent = left;
   showScreen('rest');
 
+  const endAt = Date.now() + secs * 1000;
   S.restInterval = setInterval(() => {
-    left--;
-    document.getElementById('rest-n').textContent = left;
-    if (left <= 0) {
+    const remainingMs = endAt - Date.now();
+    const left2 = Math.max(0, Math.ceil(remainingMs / 1000));
+    if (left2 !== left) {
+      left = left2;
+      document.getElementById('rest-n').textContent = left;
+    }
+    if (remainingMs <= 0) {
       clearInterval(S.restInterval);
       S.exIdx++;
       renderExercise();
       showScreen('exercise');
     }
-  }, 1000);
+  }, 200);
 }
 
 function skipRest() {
@@ -1327,11 +1347,16 @@ let planRestInterval = null;
 function startPlanRest(secs, movingToNextEx) {
   clearInterval(planRestInterval);
   let left = secs;
+  const endAt = Date.now() + secs * 1000;
   planRestInterval = setInterval(() => {
-    left--;
-    document.getElementById('plan-rest-n').textContent = left;
-    if (left <= 0) { clearInterval(planRestInterval); advancePlan(movingToNextEx); }
-  }, 1000);
+    const remainingMs = endAt - Date.now();
+    const left2 = Math.max(0, Math.ceil(remainingMs / 1000));
+    if (left2 !== left) {
+      left = left2;
+      document.getElementById('plan-rest-n').textContent = left;
+    }
+    if (remainingMs <= 0) { clearInterval(planRestInterval); advancePlan(movingToNextEx); }
+  }, 200);
 }
 
 function advancePlan(movingToNextEx) {
