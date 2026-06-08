@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220">
+  <defs>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- soft amber glow halo behind text (CRT phosphor look) -->
+  <text x="350" y="120" text-anchor="middle"
+        font-family="'Courier New', 'Lucida Console', monospace" font-weight="700"
+        font-size="68" letter-spacing="6" fill="#E8821B" opacity="0.35" filter="url(#glow)">claude code</text>
+
+  <!-- main wordmark, vintage terminal amber -->
+  <text x="350" y="120" text-anchor="middle"
+        font-family="'Courier New', 'Lucida Console', monospace" font-weight="700"
+        font-size="68" letter-spacing="6" fill="#E8821B">claude_code</text>
+
+  <!-- blinking cursor block -->
+  <rect x="466" y="78" width="22" height="46" fill="#E8821B"/>
+
+  <!-- scanline accents, top and bottom -->
+  <line x1="120" y1="70" x2="580" y2="70" stroke="#E8821B" stroke-width="2" opacity="0.55"/>
+  <line x1="120" y1="170" x2="580" y2="170" stroke="#E8821B" stroke-width="2" opacity="0.55"/>
+
+  <!-- small "&gt;" prompt marks flanking, retro terminal style -->
+  <text x="135" y="178" font-family="'Courier New', monospace" font-weight="700" font-size="26" fill="#E8821B" opacity="0.8">&gt;</text>
+  <text x="545" y="178" font-family="'Courier New', monospace" font-weight="700" font-size="26" fill="#E8821B" opacity="0.8">_</text>
+</svg>
