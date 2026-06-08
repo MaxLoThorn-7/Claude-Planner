@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Move Now</title>
+  <style>
+    :root {
+      --bg: #0c0c11;
+      --surface: #13131d;
+      --surface2: #1a1a27;
+      --border: #252535;
+      --text: #e4e4ef;
+      --text2: #6868a0;
+      --text3: #38385a;
+      --accent: #6b5ef8;
+      --accent-dim: rgba(107,94,248,0.12);
+      --accent-hover: #7c70f9;
+      --warm: #f0955a;
+      --warm-dim: rgba(240,149,90,0.15);
+      --green: #4cc984;
+      --green-dim: rgba(76,201,132,0.13);
+      --r: 14px;
+      --r-sm: 10px;
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      min-height: 100%;
+      background: var(--bg);
+      background-image: radial-gradient(ellipse at 50% 0%, rgba(107,94,248,0.06) 0%, transparent 70%);
+      color: var(--text);
+      font-family: var(--font);
+      font-size: 16px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    #app {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+    }
+    .screen {
+      width: 100%;
+      max-width: 460px;
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeUp 0.35s ease both;
+    }
+    .screen.active { display: flex; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Typography ── */
+    .hed { font-size: 34px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.15; }
+    .sub { font-size: 17px; color: var(--text2); line-height: 1.65; }
+    .eyebrow {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text3);
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      padding: 15px 22px; border-radius: var(--r-sm);
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      border: none; transition: all 0.15s ease; user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-ghost {
+      background: transparent; color: var(--text2);
+      border: 1.5px solid var(--border);
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text3); }
+    .btn:disabled { opacity: 0.35; pointer-events: none; }
+
+    /* ── Breathing ── */
+    .breath-wrap {
+      display: flex; flex-direction: column;
+      align-items: center; gap: 16px; padding: 12px 0;
+    }
+    .breath-orb {
+      width: 110px; height: 110px; border-radius: 50%;
+      background: var(--accent-dim);
+      border: 1.5px solid rgba(107,94,248,0.35);
+      box-shadow: 0 0 40px rgba(107,94,248,0.15);
+      animation: orb 8s ease-in-out infinite;
+    }
+    @keyframes orb {
+      0%, 100% { transform: scale(1);   opacity: 0.55; }
+      50%       { transform: scale(1.28); opacity: 1;   }
+    }
+    .breath-msg {
+      font-size: 14px; color: var(--text2);
+      transition: opacity 0.35s ease;
+      min-height: 20px; text-align: center;
+    }
+
+    /* ── Progress dots ── */
+    .q-dots { display: flex; gap: 6px; }
+    .q-dot {
+      height: 3px; flex: 1; border-radius: 2px;
+      background: var(--border); transition: background 0.3s;
+    }
+    .q-dot.done { background: var(--accent); }
+    .q-dot.active { background: rgba(107,94,248,0.45); }
+
+    /* ── Choice cards ── */
+    .choices { display: grid; gap: 9px; }
+    .choices.c3 { grid-template-columns: repeat(3, 1fr); }
+    .choices.c4 { grid-template-columns: repeat(4, 1fr); }
+    .choice {
+      padding: 14px 10px; background: var(--surface);
+      border: 1.5px solid var(--border); border-radius: var(--r-sm);
+      cursor: pointer; text-align: center;
+      display: flex; flex-direction: column; gap: 5px;
+      transition: all 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .choice:hover { background: var(--surface2); border-color: var(--text3); }
+    .choice.sel { border-color: var(--accent); background: var(--accent-dim); }
+    .choice-ico  { font-size: 22px; line-height: 1; }
+    .choice-lbl  { font-size: 13px; font-weight: 600; }
+    .choice-sub  { font-size: 11px; color: var(--text2); }
+
+    /* ── Assessment nav ── */
+    .assess-nav { display: flex; align-items: center; gap: 10px; }
+    .btn-back {
+      background: none; border: none; cursor: pointer;
+      color: var(--text2); font-size: 22px; padding: 4px 8px;
+      border-radius: 8px; transition: color 0.15s;
+    }
+    .btn-back:hover { color: var(--text); }
+
+    /* ── Workout list ── */
+    .wl { display: flex; flex-direction: column; gap: 7px; }
+    .wi {
+      display: flex; align-items: center; gap: 12px;
+      padding: 13px 15px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: var(--r-sm);
+    }
+    .wi-n {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--surface2); display: flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 700;
+      color: var(--text2); flex-shrink: 0;
+    }
+    .wi-name { font-size: 14px; font-weight: 600; flex: 1; }
+    .wi-tag  { font-size: 11px; color: var(--text2); }
+    .wi-dur  { font-size: 12px; color: var(--text3); }
+
+    /* ── Timer ── */
+    .timer-wrap {
+      display: flex; align-items: center; justify-content: center;
+      padding: 8px 0;
+    }
+    .timer-container { position: relative; display: inline-flex; }
+    .timer-svg { transform: rotate(-90deg); display: block; }
+    .t-bg   { fill: none; stroke: var(--surface2); stroke-width: 7; }
+    .t-ring {
+      fill: none; stroke: var(--accent); stroke-width: 7;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s linear, stroke 0.3s;
+    }
+    .t-ring.warn { stroke: var(--warm); }
+    .timer-inner {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 1px;
+    }
+    .t-count {
+      font-size: 54px; font-weight: 700;
+      letter-spacing: -2px; line-height: 1;
+    }
+    .t-unit { font-size: 12px; color: var(--text2); font-weight: 500; letter-spacing: 0.05em; }
+
+    /* ── Exercise screen ── */
+    .ex-header { display: flex; align-items: center; justify-content: space-between; }
+    .ex-progress { font-size: 14px; color: var(--text2); font-weight: 500; }
+    .ex-name { font-size: 30px; font-weight: 700; letter-spacing: -0.4px; line-height: 1.2; }
+    .ex-desc { font-size: 15px; color: var(--text2); line-height: 1.65; }
+    .ex-muscles { font-size: 12px; color: var(--text3); }
+    .ex-muscles b { color: var(--text2); font-weight: 500; }
+    .ex-controls { display: flex; gap: 9px; }
+    .ex-tip {
+      font-size: 13px; color: var(--text3); text-align: center;
+      font-style: italic; min-height: 18px;
+    }
+
+    /* ── Rest screen ── */
+    .rest-center { text-align: center; }
+    .rest-big { font-size: 80px; font-weight: 700; letter-spacing: -3px; line-height: 1; }
+    .rest-label { font-size: 16px; color: var(--text2); margin-top: 4px; }
+    .next-up { text-align: center; font-size: 15px; color: var(--text2); padding: 12px 0; }
+    .next-up strong { color: var(--text); font-weight: 600; }
+
+    /* ── Done screen ── */
+    .done-icon {
+      width: 76px; height: 76px; border-radius: 50%;
+      background: var(--green-dim); border: 1.5px solid var(--green);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 32px; margin: 0 auto;
+    }
+    .done-stats { display: flex; gap: 0; justify-content: center; }
+    .done-stat { text-align: center; padding: 0 28px; }
+    .done-stat + .done-stat { border-left: 1px solid var(--border); }
+    .stat-n { font-size: 42px; font-weight: 700; letter-spacing: -1.5px; line-height: 1; }
+    .stat-l { font-size: 13px; color: var(--text2); margin-top: 4px; }
+    .done-actions { display: flex; flex-direction: column; gap: 9px; }
+
+    /* ── Divider ── */
+    .div { height: 1px; background: var(--border); }
+
+    /* ── Responsive ── */
+    @media (max-width: 380px) {
+      .choices.c4 { grid-template-columns: repeat(2, 1fr); }
+      .hed { font-size: 27px; }
+      .ex-name { font-size: 24px; }
+      .t-count { font-size: 44px; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ════ SCREEN 1: LAND ════ -->
+  <div id="s-land" class="screen active">
+    <div class="breath-wrap">
+      <div class="breath-orb"></div>
+      <p class="breath-msg" id="breath-msg">Breathe in slowly...</p>
+    </div>
+    <div>
+      <h1 class="hed">You showed up.</h1>
+      <p class="sub" style="margin-top:9px">That's the hardest part. Let's find something you can actually do right now — no gear, no plan needed.</p>
+    </div>
+    <button class="btn btn-primary" onclick="startAssessment()">I'm ready →</button>
+    <button class="btn btn-ghost" onclick="openTrainerPlan()">My trainer's plan →</button>
+  </div>
+
+  <!-- ════ SCREEN 2: ASSESSMENT ════ -->
+  <div id="s-assess" class="screen">
+    <div class="q-dots">
+      <div class="q-dot" id="qd0"></div>
+      <div class="q-dot" id="qd1"></div>
+      <div class="q-dot" id="qd2"></div>
+      <div class="q-dot" id="qd3"></div>
+    </div>
+    <div id="q-body"></div>
+    <div class="assess-nav">
+      <button class="btn-back" id="btn-back" onclick="prevQuestion()">←</button>
+      <button class="btn btn-primary" id="btn-next" style="flex:1" onclick="nextQuestion()" disabled>Continue →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 3: WORKOUT PREVIEW ════ -->
+  <div id="s-preview" class="screen">
+    <div>
+      <p class="eyebrow">Your workout</p>
+      <h2 class="hed" style="margin-top:6px" id="preview-title">Here's exactly what to do.</h2>
+      <p class="sub" style="margin-top:7px;font-size:15px" id="preview-sub"></p>
+    </div>
+    <div class="wl" id="preview-list"></div>
+    <button class="btn btn-primary" onclick="startExercise(0)">Start first exercise →</button>
+    <button class="btn btn-ghost" onclick="reshuffleWorkout()">Different workout</button>
+    <button class="btn btn-ghost" onclick="showScreen('assess'); renderQuestion()">Change answers</button>
+  </div>
+
+  <!-- ════ SCREEN 4: EXERCISE ════ -->
+  <div id="s-exercise" class="screen">
+    <div class="ex-header">
+      <span class="ex-progress" id="ex-prog">1 of 5</span>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="skipExercise()">Skip</button>
+    </div>
+    <div class="timer-wrap">
+      <div class="timer-container">
+        <svg class="timer-svg" id="t-svg" width="190" height="190" viewBox="0 0 190 190">
+          <circle class="t-bg"   cx="95" cy="95" r="82"/>
+          <circle class="t-ring" id="t-ring" cx="95" cy="95" r="82"/>
+        </svg>
+        <div class="timer-inner">
+          <span class="t-count" id="t-count">40</span>
+          <span class="t-unit">sec</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <p class="eyebrow" id="ex-eyebrow">Strength</p>
+      <h2 class="ex-name" style="margin-top:5px" id="ex-name">Push-Ups</h2>
+    </div>
+    <p class="ex-desc" id="ex-desc">Instructions go here.</p>
+    <p class="ex-muscles" id="ex-muscles"></p>
+    <p class="ex-tip" id="ex-tip"></p>
+    <div class="ex-controls">
+      <button class="btn btn-ghost" style="flex:1" id="btn-pause" onclick="togglePause()">Pause</button>
+      <button class="btn btn-primary" style="flex:2" id="btn-done" onclick="doneExercise()">Done, next →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 5: REST ════ -->
+  <div id="s-rest" class="screen">
+    <div class="rest-center">
+      <p class="eyebrow">Rest</p>
+      <p class="rest-big" id="rest-n">15</p>
+      <p class="rest-label">seconds</p>
+    </div>
+    <p class="next-up">Next up: <strong id="next-name">Plank Hold</strong></p>
+    <div class="div"></div>
+    <button class="btn btn-ghost" onclick="skipRest()">Skip rest →</button>
+  </div>
+
+  <!-- ════ SCREEN 6: DONE ════ -->
+  <div id="s-done" class="screen">
+    <div class="done-icon">✓</div>
+    <div style="text-align:center">
+      <h2 class="hed">Done.</h2>
+      <p class="sub" style="margin-top:8px">You moved. That's what mattered.</p>
+    </div>
+    <div class="done-stats">
+      <div class="done-stat">
+        <p class="stat-n" id="done-exercises">5</p>
+        <p class="stat-l">exercises</p>
+      </div>
+      <div class="done-stat">
+        <p class="stat-n" id="done-mins">12</p>
+        <p class="stat-l">minutes</p>
+      </div>
+    </div>
+    <div class="done-actions">
+      <button class="btn btn-primary" onclick="doAgain()">Do it again</button>
+      <button class="btn btn-ghost" onclick="reshuffleAndGo()">Different workout</button>
+      <button class="btn btn-ghost" onclick="goHome()">Start over</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 6B: TRAINER PLAN — PICK DAY ════ -->
+  <div id="s-trainer-pick" class="screen">
+    <div>
+      <p class="eyebrow">Trainer's plan · home version</p>
+      <h2 class="hed" style="margin-top:6px">Which session?</h2>
+      <p class="sub" style="margin-top:7px;font-size:15px">Bands &amp; two 10 lb dumbbells</p>
+    </div>
+    <div id="plan-day-list" style="display:flex;flex-direction:column;gap:10px"></div>
+    <button class="btn btn-ghost" onclick="showScreen('land')">← Back</button>
+  </div>
+
+  <!-- ════ SCREEN 7: TRAINER PLAN PREVIEW ════ -->
+  <div id="s-trainer" class="screen">
+    <div>
+      <p class="eyebrow">Trainer's plan · home version</p>
+      <h2 class="hed" style="margin-top:6px" id="plan-day-title">Today's session.</h2>
+      <p class="sub" style="margin-top:7px;font-size:15px" id="plan-day-sub">Bands &amp; 10 lb dumbbells · 90s rest</p>
+    </div>
+    <div class="wl" id="plan-list"></div>
+    <button class="btn btn-primary" onclick="startPlanExercise(0)">Start →</button>
+    <button class="btn btn-ghost" onclick="showScreen('trainer-pick')">← Choose a different day</button>
+  </div>
+
+  <!-- ════ SCREEN 8: PLAN EXERCISE ════ -->
+  <div id="s-plan-ex" class="screen">
+    <div class="ex-header">
+      <span class="ex-progress" id="plan-ex-prog">Exercise 1 of 7</span>
+      <button class="btn btn-ghost" style="padding:8px 14px;font-size:13px" onclick="skipPlanExercise()">Skip</button>
+    </div>
+    <div>
+      <p class="eyebrow" id="plan-set-label">Set 1 of 3 · 10 reps</p>
+      <h2 class="ex-name" style="margin-top:5px" id="plan-ex-name">Exercise</h2>
+    </div>
+    <p class="ex-desc" id="plan-ex-desc"></p>
+    <p class="ex-muscles" id="plan-ex-muscles"></p>
+    <p class="ex-tip" id="plan-ex-tip"></p>
+    <p style="font-size:12px;color:var(--text3)">
+      Gym equivalent: <span id="plan-gym-name" style="color:var(--text2)"></span>
+    </p>
+    <div class="ex-controls">
+      <button class="btn btn-ghost" style="flex:1" onclick="skipPlanExercise()">Skip exercise</button>
+      <button class="btn btn-primary" style="flex:2" id="btn-plan-done" onclick="donePlanSet()">Done set →</button>
+    </div>
+  </div>
+
+  <!-- ════ SCREEN 9: PLAN REST ════ -->
+  <div id="s-plan-rest" class="screen">
+    <div class="rest-center">
+      <p class="eyebrow">Rest</p>
+      <p class="rest-big" id="plan-rest-n">90</p>
+      <p class="rest-label">seconds</p>
+    </div>
+    <p class="next-up" id="plan-next-up">Next: <strong>Set 2 of 3</strong></p>
+    <div class="div"></div>
+    <button class="btn btn-ghost" onclick="skipPlanRest()">Skip rest →</button>
+  </div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// EXERCISE DATABASE
+// ═══════════════════════════════════════════
+const DB = [
+  // ── STANDING ──
+  { id:'march',       name:'March in Place',         eyebrow:'Warmup',
+    desc:'Lift your knees one at a time, arms swinging naturally. Find a steady rhythm and just keep moving.',
+    muscles:'legs · core · light cardio', dur:40, energy:'low',
+    warmup:true, stretch:false, space:'standing' },
+
+  { id:'neck_roll',   name:'Neck & Shoulder Rolls',  eyebrow:'Warmup',
+    desc:'Slowly roll your head left to right, then drop chin to chest. Follow with big shoulder rolls forward, then back.',
+    muscles:'neck · traps · upper back', dur:30, energy:'low',
+    warmup:true, stretch:false, space:'standing' },
+
+  { id:'arm_circles', name:'Arm Circles',             eyebrow:'Warmup',
+    desc:'Extend both arms out to the sides. Small circles forward first, then big circles. Reverse halfway through.',
+    muscles:'shoulders · upper back', dur:30, energy:'low',
+    warmup:true, stretch:false, space:'standing' },
+
+  { id:'hip_circles', name:'Hip Circles',             eyebrow:'Mobility',
+    desc:'Feet shoulder-width apart, hands on hips. Draw big slow circles with your hips — like a hula hoop. 10 each way.',
+    muscles:'hip flexors · lower back', dur:30, energy:'low',
+    warmup:true, stretch:false, space:'standing' },
+
+  { id:'torso_twist', name:'Torso Twists',            eyebrow:'Mobility',
+    desc:'Arms out or hands behind head. Rotate your upper body left and right slowly. Hips stay facing forward.',
+    muscles:'obliques · spine', dur:30, energy:'low',
+    warmup:true, stretch:false, space:'standing' },
+
+  { id:'ankle_wrist', name:'Ankle & Wrist Circles',   eyebrow:'Warmup',
+    desc:'Lift one foot, circle the ankle slowly each way. Then circle each wrist. Gets the joints warmed up before anything else.',
+    muscles:'ankles · wrists · forearms', dur:30, energy:'low',
+    warmup:true, stretch:false, space:'standing' },
+
+  { id:'calf_raise',  name:'Calf Raises',             eyebrow:'Strength',
+    desc:'Rise slowly onto your toes, hold at the top for a beat, lower back down. Touch a wall for balance if you need to.',
+    muscles:'calves · ankles', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'wall_pushup', name:'Wall Push-Ups',           eyebrow:'Strength',
+    desc:'Hands on wall at shoulder height, step back slightly. Lower chest toward the wall, push away. Slow and controlled.',
+    muscles:'chest · shoulders · triceps', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'squat',       name:'Bodyweight Squats',       eyebrow:'Strength',
+    desc:'Feet shoulder-width, toes slightly out. Lower as if sitting back into a chair — chest up, knees track over toes. Drive back up.',
+    muscles:'quads · glutes · hamstrings', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'oblique_crunch', name:'Standing Side Crunches', eyebrow:'Core',
+    desc:'Hands lightly behind your head. Lift one knee while bringing the same elbow down toward it. Alternate sides in a steady rhythm.',
+    muscles:'obliques · hip flexors · core', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'hip_hinge',   name:'Standing Hip Hinge',      eyebrow:'Mobility',
+    desc:'Push hips back and hinge forward from the hips — back stays flat, soft bend in knees. Feel the hamstring stretch, stand back up.',
+    muscles:'hamstrings · lower back · glutes', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'leg_raise_s', name:'Standing Leg Raises',     eyebrow:'Strength',
+    desc:'Touch a wall for balance if needed. Lift one leg straight out to the side, pause briefly, lower. Keep your torso tall. Alternate sides.',
+    muscles:'hip abductors · glutes · core', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'shadow_box',  name:'Shadow Boxing',           eyebrow:'Cardio',
+    desc:'Loose athletic stance. Throw alternating punches while shifting your weight. Shoulders relaxed, keep breathing. Move however feels right.',
+    muscles:'shoulders · core · cardio', dur:45, energy:'medium',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'high_knees',  name:'High Knees',              eyebrow:'Cardio',
+    desc:'Run in place, driving each knee toward hip height. Pump your arms. Go at a pace that works for you right now.',
+    muscles:'hip flexors · cardio · core', dur:40, energy:'high',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'shoulder_sq', name:'Shoulder Blade Squeezes', eyebrow:'Mobility',
+    desc:'Arms relaxed at sides or raised in front of you. Squeeze your shoulder blades firmly together, hold 3 sec, release. Repeat.',
+    muscles:'rhomboids · rear deltoids · traps', dur:30, energy:'low',
+    warmup:false, stretch:false, space:'standing' },
+
+  { id:'chest_open',  name:'Chest Opener',            eyebrow:'Stretch',
+    desc:'Clasp hands behind your back, squeeze shoulder blades, lift your chest toward the ceiling. Breathe into it.',
+    muscles:'chest · front shoulders · biceps', dur:30, energy:'low',
+    warmup:false, stretch:true, space:'standing' },
+
+  { id:'side_stretch',name:'Standing Side Stretch',   eyebrow:'Stretch',
+    desc:'Reach one arm up and overhead, lean to the opposite side until you feel a long stretch down your side. Hold, breathe, switch.',
+    muscles:'lats · obliques · intercostals', dur:30, energy:'low',
+    warmup:false, stretch:true, space:'standing' },
+
+  { id:'quad_stretch',name:'Standing Quad Stretch',   eyebrow:'Stretch',
+    desc:'Balance on one foot, bend the other knee and hold your ankle behind you. Feel the front-thigh stretch. Switch sides.',
+    muscles:'quads · hip flexors', dur:30, energy:'low',
+    warmup:false, stretch:true, space:'standing' },
+
+  // ── MAT ──
+  { id:'cat_cow',     name:'Cat-Cow',                 eyebrow:'Warmup',
+    desc:'On hands and knees. Arch your back up toward the ceiling (cat), then let your belly sink down and head rise (cow). Breathe with each.',
+    muscles:'spine · lower back · neck', dur:30, energy:'low',
+    warmup:true, stretch:false, space:'mat' },
+
+  { id:'pushup',      name:'Push-Ups',                eyebrow:'Strength',
+    desc:'Hands slightly wider than shoulders. Lower chest toward the floor, keeping body in a straight line. Push back up. Knees down is completely fine.',
+    muscles:'chest · shoulders · triceps · core', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'plank',       name:'Plank Hold',              eyebrow:'Core',
+    desc:'Forearms on the floor, elbows under shoulders. Body in a straight line from head to heels. Just breathe and hold.',
+    muscles:'core · shoulders · full body', dur:30, energy:'medium',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'side_plank',  name:'Side Plank',              eyebrow:'Core',
+    desc:'Forearm on floor, body stacked sideways. Hold your hips up off the ground. Switch sides halfway through the timer.',
+    muscles:'obliques · glutes · shoulders', dur:30, energy:'medium',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'glute_bridge',name:'Glute Bridges',           eyebrow:'Strength',
+    desc:'Lie on your back, knees bent, feet flat. Drive your hips up and squeeze the glutes at the top. Lower, repeat.',
+    muscles:'glutes · hamstrings · lower back', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'dead_bug',    name:'Dead Bug',                eyebrow:'Core',
+    desc:'On your back, arms up, knees at 90° over hips. Lower the opposite arm and leg toward the floor slowly. Return. Alternate sides.',
+    muscles:'deep core · hip flexors · spine stabilizers', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'bird_dog',    name:'Bird Dog',                eyebrow:'Core',
+    desc:'On hands and knees. Extend your right arm and left leg simultaneously — hold 2 seconds, switch. Keep hips level throughout.',
+    muscles:'core · glutes · lower back · shoulders', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'superman',    name:'Superman',                eyebrow:'Strength',
+    desc:'Lie face down, arms extended overhead. Lift your arms, chest, and legs off the floor simultaneously. Hold a beat, lower slowly.',
+    muscles:'lower back · glutes · rear shoulders', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'leg_raise_m', name:'Leg Raises',              eyebrow:'Core',
+    desc:'Lie on your back, legs straight. Lift both legs to 90°, then lower slowly — stop just before they touch the floor.',
+    muscles:'lower abs · hip flexors', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'mt_climber',  name:'Mountain Climbers',       eyebrow:'Cardio',
+    desc:'High plank position. Drive one knee toward your chest, then quickly switch legs. Keep your hips level and core tight.',
+    muscles:'core · hip flexors · shoulders · cardio', dur:40, energy:'high',
+    warmup:false, stretch:false, space:'mat' },
+
+  { id:'childs_pose', name:"Child's Pose",            eyebrow:'Stretch',
+    desc:'Kneel and sit back toward your heels. Walk hands forward, rest forehead on the floor. Breathe into your lower back.',
+    muscles:'hips · lower back · lats · ankles', dur:30, energy:'low',
+    warmup:false, stretch:true, space:'mat' },
+
+  { id:'hip_fl_str',  name:'Hip Flexor Stretch',      eyebrow:'Stretch',
+    desc:'Low lunge: one knee on the floor, other foot forward. Gently press hips forward until you feel the front of the back hip open.',
+    muscles:'hip flexors · quads · groin', dur:35, energy:'low',
+    warmup:false, stretch:true, space:'mat' },
+
+  { id:'cobra',       name:'Cobra Stretch',           eyebrow:'Stretch',
+    desc:'Lie face down, hands under shoulders. Press gently up, letting your lower back arch. Elbows soft, breathe into your chest.',
+    muscles:'lower back · abs (lengthened) · chest', dur:30, energy:'low',
+    warmup:false, stretch:true, space:'mat' },
+
+  { id:'seated_twist',name:'Seated Spinal Twist',     eyebrow:'Stretch',
+    desc:'Sit with legs out. Cross one foot to the outside of the opposite knee. Rotate toward it and breathe. Switch sides.',
+    muscles:'spine · obliques · glutes', dur:30, energy:'low',
+    warmup:false, stretch:true, space:'mat' },
+
+  // ── ROOM ──
+  { id:'j_jacks',     name:'Jumping Jacks',           eyebrow:'Warmup',
+    desc:'Jump feet wide while raising arms overhead, then jump back together. Find a comfortable rhythm.',
+    muscles:'full body · cardio', dur:40, energy:'medium',
+    warmup:true, stretch:false, space:'room' },
+
+  { id:'rev_lunge',   name:'Reverse Lunges',          eyebrow:'Strength',
+    desc:'Step one foot straight back, lower the back knee toward the floor. Push off the back foot to return. Alternate legs.',
+    muscles:'quads · glutes · hamstrings · core', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'room' },
+
+  { id:'inchworm',    name:'Inchworm Walk',           eyebrow:'Mobility',
+    desc:'Standing, hinge forward and walk your hands out to a plank. Pause. Walk hands back to feet, stand up. Repeat.',
+    muscles:'hamstrings · core · shoulders · full body', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'room' },
+
+  { id:'lat_shuffle', name:'Lateral Shuffles',        eyebrow:'Cardio',
+    desc:'Wide, athletic stance. Shuffle 3-4 steps to the right, then 3-4 steps back to the left. Stay low in your hips.',
+    muscles:'glutes · hip abductors · cardio', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'room' },
+
+  { id:'bear_crawl',  name:'Bear Crawl',              eyebrow:'Full Body',
+    desc:'On all fours, hover your knees 2 inches off the floor. Crawl forward 4 steps, then backward. Keep the knees low.',
+    muscles:'core · shoulders · hip flexors · quads', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'room' },
+
+  // ── RESISTANCE BANDS ──
+  { id:'band_pull_apart', name:'Band Pull-Aparts',      eyebrow:'Strength',
+    desc:'Hold the band at shoulder height with arms extended. Pull it apart by driving both hands outward until fully stretched. Squeeze shoulder blades, return slowly.',
+    muscles:'rear deltoids · rhomboids · traps', dur:40, energy:'low',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  { id:'band_row',        name:'Banded Rows',           eyebrow:'Strength',
+    desc:'Step on the band, hinge slightly forward, hold the ends. Pull toward your hips driving elbows back. Hold a beat at the top, lower with control.',
+    muscles:'lats · rhomboids · biceps', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  { id:'band_squat',      name:'Banded Squats',         eyebrow:'Strength',
+    desc:'Step on the band, hold the handles at shoulder height. Squat as normal — the band increases resistance as you drive back up.',
+    muscles:'quads · glutes · hamstrings', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  { id:'band_ohpress',    name:'Banded Overhead Press', eyebrow:'Strength',
+    desc:'Step on the band, hold handles at shoulders. Press straight overhead until arms fully extend. Lower with control. Keep core braced throughout.',
+    muscles:'shoulders · triceps · upper traps', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'bands' },
+
+  // ── DUMBBELLS ──
+  { id:'goblet_squat',    name:'Goblet Squat',          eyebrow:'Strength',
+    desc:'Hold one dumbbell vertically at your chest. Feet shoulder-width. Squat deep, chest up, knees tracking out over toes. Drive back up through your heels.',
+    muscles:'quads · glutes · core', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'weights' },
+
+  { id:'db_rdl',          name:'Dumbbell RDL',          eyebrow:'Strength',
+    desc:'Hold dumbbells in front of thighs. Hinge at hips, sending them back as the weights travel down your legs. Feel the hamstrings load. Drive hips forward to stand.',
+    muscles:'hamstrings · glutes · lower back', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'standing', gear:'weights' },
+
+  { id:'db_row',          name:'Single-Arm Row',        eyebrow:'Strength',
+    desc:'Brace one hand on a surface, hold dumbbell in the other. Pull it toward your hip, driving your elbow back past your torso. Squeeze at top. Switch sides.',
+    muscles:'lats · rhomboids · biceps · core', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'mat', gear:'weights' },
+
+  { id:'db_floor_press',  name:'Dumbbell Floor Press',  eyebrow:'Strength',
+    desc:'Lie on your back, dumbbells at chest with upper arms resting on the floor. Press straight up until arms extend. Lower back to floor with control.',
+    muscles:'chest · shoulders · triceps', dur:40, energy:'medium',
+    warmup:false, stretch:false, space:'mat', gear:'weights' },
+];
+
+// ═══════════════════════════════════════════
+// TRAINER'S PLAN — home equivalents
+// Equipment needed: resistance bands + 2 × 10 lb dumbbells
+// ═══════════════════════════════════════════
+const TRAINER_PLANS = {
+  tuesday: {
+    label: 'Tuesday — Low Volume Heavy',
+    sub: '7 exercises · compound lifts',
+    exercises: [
+      {
+        id: 'tp_shoulder_press',
+        name: 'Seated DB Shoulder Press',
+        gymName: 'DB Seated Shoulder Press',
+        eyebrow: 'Shoulders',
+        desc: 'Sit upright on a chair. Dumbbells at shoulder height, palms forward. Press both overhead until arms fully extend. Lower with control back to shoulders.',
+        muscles: 'shoulders · triceps · upper traps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_lat_pull',
+        name: 'Band Lat Pulldown',
+        gymName: 'Lat Pulldown',
+        eyebrow: 'Back',
+        desc: 'Loop band over a door frame or pull-up bar. Kneel or sit. Grab both ends with arms extended overhead. Pull down to upper chest driving elbows toward your hips. Return slowly.',
+        muscles: 'lats · biceps · rear deltoids',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_goblet_squat',
+        name: 'Goblet Squat',
+        gymName: 'Seated Leg Press',
+        eyebrow: 'Legs',
+        desc: 'Hold one 10 lb dumbbell vertically at your chest. Feet shoulder-width, toes slightly out. Squat as deep as comfortable, chest up. Drive back up through your heels.',
+        muscles: 'quads · glutes · hamstrings',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_db_row',
+        name: 'Single-Arm Dumbbell Row',
+        gymName: 'Dumbbell Row',
+        eyebrow: 'Back',
+        desc: 'Brace one hand on a chair or table. Hold 10 lb dumbbell in the other. Let shoulder drop, then pull dumbbell toward your hip driving elbow past your torso. Both sides = one set.',
+        muscles: 'lats · rhomboids · biceps',
+        sets: 2, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_leg_ext',
+        name: 'Band Leg Extension',
+        gymName: 'Machine Leg Extension',
+        eyebrow: 'Quads',
+        desc: 'Sit on a chair. Loop band around one ankle, anchor the other end under the front chair legs. Extend your knee until the leg is straight. Squeeze at the top. All reps one leg, then switch.',
+        muscles: 'quads',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_ham_curl',
+        name: 'Band Hamstring Curl',
+        gymName: 'Seated Hamstring Curl',
+        eyebrow: 'Hamstrings',
+        desc: 'Lie face down. Loop band around one ankle, anchor the other end to something stable near the floor (table leg, couch foot). Curl your heel toward your glute. All reps one leg, then switch.',
+        muscles: 'hamstrings',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp_tricep',
+        name: 'Band Tricep Pushdown',
+        gymName: 'Cable Straight Bar Tricep Pushdown',
+        eyebrow: 'Triceps',
+        desc: 'Loop band over the top of a door (close the door to anchor it). Face the door, grab band with both hands at chest height, elbows pinned to sides. Push straight down until arms fully extend.',
+        muscles: 'triceps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+    ],
+  },
+
+  saturday: {
+    label: 'Saturday — Low Volume Accessory',
+    sub: '10 exercises · arms, shoulders & core',
+    exercises: [
+      {
+        id: 'tp2_incline_press',
+        name: 'Decline Push-Ups',
+        gymName: 'DB Incline Bench Press',
+        eyebrow: 'Chest',
+        desc: 'Hands on the floor, feet propped on a couch cushion or chair seat. Lower your chest toward the floor, push back up. The angle targets the upper chest the way an incline press does.',
+        muscles: 'upper chest · front shoulders · triceps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_reverse_fly',
+        name: 'Bent-Over DB Reverse Fly',
+        gymName: 'Machine Seated Reverse Fly',
+        eyebrow: 'Shoulders',
+        desc: 'Hold a dumbbell in each hand, hinge forward at the hips with a flat back, knees soft. Raise both arms straight out to the sides, squeezing shoulder blades together. Lower with control.',
+        muscles: 'rear deltoids · rhomboids · upper back',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_chest_press',
+        name: 'Dumbbell Floor Press',
+        gymName: 'Machine Seated Chest Press',
+        eyebrow: 'Chest',
+        desc: 'Lie on your back, knees bent. Dumbbells at chest height with upper arms resting on the floor. Press straight up until arms extend, lower back down with control.',
+        muscles: 'chest · shoulders · triceps',
+        sets: 1, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_hammer_curl',
+        name: 'Dumbbell Hammer Curl',
+        gymName: 'Dumbbell Hammer Curl',
+        eyebrow: 'Arms',
+        desc: 'Stand holding dumbbells with palms facing each other (neutral grip). Curl both up toward your shoulders without rotating your wrists. Lower slowly.',
+        muscles: 'biceps · forearms',
+        sets: 2, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_lat_raise',
+        name: 'Dumbbell Lateral Raise',
+        gymName: 'Full ROM Lat Raise',
+        eyebrow: 'Shoulders',
+        desc: 'Stand holding a dumbbell in each hand at your sides. Raise both arms out to shoulder height, leading with your elbows, slight bend in arms. Lower slowly through the full range.',
+        muscles: 'side deltoids · upper traps',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_incline_curl',
+        name: 'Reclined Dumbbell Curl',
+        gymName: 'Dumbbell Incline Bicep Curl',
+        eyebrow: 'Arms',
+        desc: 'Sit and lean back against a couch arm or stacked pillows at an incline, arms hanging straight down. Curl the dumbbells up toward your shoulders. The recline deepens the stretch on the biceps.',
+        muscles: 'biceps',
+        sets: 2, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_shrug',
+        name: 'Dumbbell Shrug',
+        gymName: 'Dumbbell Shrug',
+        eyebrow: 'Traps',
+        desc: 'Stand holding a dumbbell in each hand at your sides. Shrug your shoulders straight up toward your ears, hold a beat, lower with control. Straight up and down — don\'t roll them.',
+        muscles: 'upper trapezius',
+        sets: 3, reps: 10, restSecs: 90,
+      },
+      {
+        id: 'tp2_crunch',
+        name: 'Weighted Dumbbell Crunch',
+        gymName: 'Seated Machine Ab Crunch',
+        eyebrow: 'Core',
+        desc: 'Lie on your back, knees bent, feet flat. Hold one dumbbell against your chest. Crunch up, lifting your shoulder blades off the floor, squeeze, then lower with control.',
+        muscles: 'abs · obliques',
+        sets: 2, reps: 12, restSecs: 90,
+      },
+      {
+        id: 'tp2_calf_raise',
+        name: 'Single-Leg Calf Raise (Step)',
+        gymName: 'Single Leg Deficit Calf Raise',
+        eyebrow: 'Calves',
+        desc: 'Stand on a step or sturdy ledge on one foot, heel hanging off the edge. Holding a wall for balance, lower your heel below the step, then rise as high as possible onto your toes.',
+        muscles: 'calves',
+        sets: 3, reps: 'AMRAP', repsLabel: 'as many as you can', restSecs: 90,
+      },
+      {
+        id: 'tp2_neck',
+        name: 'Yes, No, Maybe Neck',
+        gymName: 'Yes, No, Maybe Neck',
+        eyebrow: 'Neck',
+        desc: 'Seated or standing, tall posture. Slowly nod "yes" (up and down), then shake "no" (side to side), then tilt "maybe" (ear toward shoulder, side to side). Slow and controlled — no equipment needed.',
+        muscles: 'neck · cervical stabilizers',
+        sets: 1, reps: 10, repsLabel: '10 reps each direction', restSecs: 90,
+      },
+    ],
+  },
+};
+
+// ═══════════════════════════════════════════
+// QUESTIONS
+// ═══════════════════════════════════════════
+const QUESTIONS = [
+  {
+    key: 'space',
+    q: 'What space do you have right now?',
+    hint: 'Be honest — whatever you have is fine.',
+    opts: [
+      { v:'standing', ico:'🚶', lbl:'Standing only', sub:'No floor space' },
+      { v:'mat',      ico:'🧘', lbl:'Mat space',     sub:'Room to lie down' },
+      { v:'room',     ico:'🏃', lbl:'Open room',     sub:'Space to move' },
+    ],
+    cols: 'c3',
+  },
+  {
+    key: 'time',
+    q: 'How much time can you give this?',
+    hint: "Pick what's realistic right now.",
+    opts: [
+      { v:5,  ico:'⚡', lbl:'5 min',  sub:'Quick hit' },
+      { v:10, ico:'🔥', lbl:'10 min', sub:'Solid' },
+      { v:20, ico:'💪', lbl:'20 min', sub:'Good session' },
+      { v:30, ico:'🏆', lbl:'30 min', sub:'Full workout' },
+    ],
+    cols: 'c4',
+  },
+  {
+    key: 'energy',
+    q: 'How are you feeling right now?',
+    hint: 'Honestly. This changes the exercises you get.',
+    opts: [
+      { v:'low',    ico:'😶', lbl:'Flat / tired',     sub:'Running on empty' },
+      { v:'medium', ico:'😤', lbl:'Stressed or stiff', sub:'Need to shake something off' },
+      { v:'high',   ico:'💥', lbl:'Ready to go',      sub:'Just need the plan' },
+    ],
+    cols: 'c3',
+  },
+  {
+    key: 'equipment',
+    q: 'Any equipment nearby?',
+    hint: 'Everything works with nothing — this is just a bonus.',
+    opts: [
+      { v:'none',    ico:'🙌', lbl:'Nothing at all', sub:'Pure bodyweight' },
+      { v:'bands',   ico:'🎗️', lbl:'Resistance bands', sub:'Light or heavy' },
+      { v:'weights', ico:'🏋️', lbl:'Dumbbells',       sub:'Any weight' },
+    ],
+    cols: 'c3',
+  },
+];
+
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+const S = {
+  screen: 'land',
+  qIdx: 0,
+  answers: { space: null, time: null, energy: null, equipment: null },
+  workout: [],
+  exIdx: 0,
+  timerInterval: null,
+  restInterval: null,
+  secsLeft: 0,
+  secsTotal: 0,
+  timerEndAt: 0,
+  pausedRemainMs: 0,
+  paused: false,
+  startMs: null,
+  numRounds: 1,
+  circuitLen: 0,
+  warmupCount: 0,
+  planDay: null,
+  planExIdx: 0,
+  planSetIdx: 0,
+};
+
+// ═══════════════════════════════════════════
+// TIPS shown during exercise
+// ═══════════════════════════════════════════
+const TIPS = [
+  'Breathe. In through the nose, out through the mouth.',
+  'One rep at a time. That\'s all.',
+  'You\'re already doing more than you were.',
+  'Keep going. This is enough.',
+  'Slow and controlled beats fast and sloppy every time.',
+  'How you feel after always beats how you feel before.',
+  'Your body knows how to do this.',
+  'Form first. Speed later.',
+  "You don't have to like it. You just have to do it.",
+  'Eyes forward. Keep breathing.',
+];
+
+// ═══════════════════════════════════════════
+// WORKOUT GENERATOR
+// ═══════════════════════════════════════════
+function buildWorkout() {
+  const { space, time, energy, equipment } = S.answers;
+
+  // Space filter
+  const spaceAllowed = { standing: ['standing'], mat: ['standing','mat'], room: ['standing','mat','room'] };
+  let pool = DB.filter(e => spaceAllowed[space].includes(e.space));
+
+  // Energy filter
+  const energyOk = { low: ['low'], medium: ['low','medium'], high: ['low','medium','high'] };
+  pool = pool.filter(e => energyOk[energy].includes(e.energy));
+
+  // Equipment filter: always include bodyweight (no gear field), plus gear that matches
+  pool = pool.filter(e => !e.gear || e.gear === 'none' || e.gear === equipment);
+
+  const warmups   = shuffle(pool.filter(e => e.warmup));
+  const stretches = shuffle(pool.filter(e => e.stretch));
+  const mains     = shuffle(pool.filter(e => !e.warmup && !e.stretch));
+
+  // Longer workouts repeat the circuit to genuinely fill the selected time.
+  // avgDur ≈ 37 s/exercise; aim to fill ~90% of the target.
+  const numRounds   = time <= 10 ? 1 : time === 20 ? 2 : 3;
+  const restSecs    = getRestSecs();
+  const totalSlots  = Math.round((time * 60 * 0.9) / (37 + restSecs));
+  const wCount      = time >= 20 ? 2 : 1;
+  const stretchCount = time >= 10 ? 1 : 0;
+  const mainSlots   = Math.max(1, totalSlots - wCount - stretchCount);
+  const circuitSize = Math.min(mains.length, Math.ceil(mainSlots / numRounds));
+  const circuit     = mains.slice(0, circuitSize);
+
+  const result = [];
+  warmups.slice(0, wCount).forEach(e => result.push(e));
+  for (let r = 0; r < numRounds; r++) result.push(...circuit);
+  if (stretchCount > 0) {
+    const usedIds = new Set(result.map(e => e.id));
+    const s = stretches.find(e => !usedIds.has(e.id));
+    if (s) result.push(s);
+  }
+
+  S.numRounds   = numRounds;
+  S.circuitLen  = circuitSize;
+  S.warmupCount = Math.min(wCount, warmups.length);
+
+  return result;
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function getRestSecs() {
+  const t = S.answers.time;
+  return t <= 5 ? 8 : t <= 10 ? 12 : t <= 20 ? 15 : 20;
+}
+
+// ═══════════════════════════════════════════
+// SCREEN NAVIGATION
+// ═══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  // Force reflow for re-animation
+  const el = document.getElementById(`s-${id}`);
+  el.style.animation = 'none';
+  el.offsetHeight; // reflow
+  el.style.animation = '';
+  el.classList.add('active');
+  S.screen = id;
+}
+
+// ═══════════════════════════════════════════
+// LANDING
+// ═══════════════════════════════════════════
+function startAssessment() {
+  S.qIdx = 0;
+  S.answers = { space: null, time: null, energy: null, equipment: null };
+  renderQuestion();
+  showScreen('assess');
+}
+
+// ═══════════════════════════════════════════
+// ASSESSMENT
+// ═══════════════════════════════════════════
+function renderQuestion() {
+  const q = QUESTIONS[S.qIdx];
+
+  // Dots
+  for (let i = 0; i < 4; i++) {
+    const d = document.getElementById(`qd${i}`);
+    d.className = 'q-dot' + (i < S.qIdx ? ' done' : i === S.qIdx ? ' active' : '');
+  }
+
+  // Back button
+  document.getElementById('btn-back').style.visibility = S.qIdx === 0 ? 'hidden' : 'visible';
+
+  // Last question → change button label
+  const isLast = S.qIdx === QUESTIONS.length - 1;
+  document.getElementById('btn-next').textContent = isLast ? 'Build my workout →' : 'Continue →';
+
+  document.getElementById('q-body').innerHTML = `
+    <div style="margin-bottom:18px">
+      <h2 class="hed" style="font-size:24px">${q.q}</h2>
+      <p class="sub" style="margin-top:6px;font-size:14px">${q.hint}</p>
+    </div>
+    <div class="choices ${q.cols}" id="choice-grid">
+      ${q.opts.map(o => `
+        <button class="choice${S.answers[q.key] === o.v ? ' sel' : ''}"
+          data-val='${JSON.stringify(o.v)}'
+          onclick="selectAnswer(this, '${q.key}')">
+          <span class="choice-ico">${o.ico}</span>
+          <span class="choice-lbl">${o.lbl}</span>
+          <span class="choice-sub">${o.sub}</span>
+        </button>
+      `).join('')}
+    </div>
+  `;
+
+  document.getElementById('btn-next').disabled = S.answers[q.key] === null;
+}
+
+function selectAnswer(el, key) {
+  const val = JSON.parse(el.dataset.val);
+  S.answers[key] = val;
+  document.querySelectorAll('#choice-grid .choice').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+  document.getElementById('btn-next').disabled = false;
+}
+
+function nextQuestion() {
+  if (S.qIdx < QUESTIONS.length - 1) {
+    S.qIdx++;
+    renderQuestion();
+  } else {
+    S.workout = buildWorkout();
+    renderPreview();
+    showScreen('preview');
+  }
+}
+
+function prevQuestion() {
+  if (S.qIdx > 0) { S.qIdx--; renderQuestion(); }
+}
+
+// ═══════════════════════════════════════════
+// WORKOUT PREVIEW
+// ═══════════════════════════════════════════
+function renderPreview() {
+  const totalSec = S.workout.reduce((s, e) => s + e.dur, 0)
+                 + (S.workout.length - 1) * getRestSecs();
+  const mins = Math.ceil(totalSec / 60);
+
+  let subText = `${S.workout.length} exercises · ~${mins} min`;
+  if (S.numRounds > 1) subText += ` · ${S.numRounds} rounds`;
+  document.getElementById('preview-sub').textContent = subText;
+
+  // For multi-round workouts show the circuit once, then a repeat note
+  const displayList = S.numRounds > 1
+    ? [...S.workout.slice(0, S.warmupCount),
+       ...S.workout.slice(S.warmupCount, S.warmupCount + S.circuitLen),
+       ...S.workout.slice(S.warmupCount + S.circuitLen * S.numRounds)]
+    : S.workout;
+
+  const roundNote = S.numRounds > 1
+    ? `<div class="wi" style="border-color:var(--accent-dim);background:var(--accent-dim)">
+        <div class="wi-n" style="font-size:17px;background:none;width:auto;height:auto">↻</div>
+        <div class="wi-name" style="font-size:13px;color:var(--text2);font-weight:500">
+          Circuit above repeats ${S.numRounds}× — ${S.workout.length} total exercises
+        </div>
+      </div>`
+    : '';
+
+  document.getElementById('preview-list').innerHTML =
+    displayList.map((e, i) => `
+      <div class="wi">
+        <div class="wi-n">${i + 1}</div>
+        <div class="wi-name">${e.name}</div>
+        <div class="wi-tag">${e.eyebrow}</div>
+        <div class="wi-dur">${e.dur}s</div>
+      </div>
+    `).join('') + roundNote;
+}
+
+function reshuffleWorkout() {
+  S.workout = buildWorkout();
+  renderPreview();
+}
+
+// ═══════════════════════════════════════════
+// EXERCISE VIEW
+// ═══════════════════════════════════════════
+function startExercise(idx) {
+  if (!S.startMs) S.startMs = Date.now();
+  S.exIdx = idx;
+  S.paused = false;
+  clearInterval(S.timerInterval);
+  renderExercise();
+  showScreen('exercise');
+}
+
+function renderExercise() {
+  const ex = S.workout[S.exIdx];
+  const total = S.workout.length;
+
+  let progressText;
+  if (S.numRounds > 1) {
+    if (ex.warmup) {
+      progressText = `Warmup · ${S.exIdx + 1} of ${total}`;
+    } else if (ex.stretch) {
+      progressText = `Stretch · ${S.exIdx + 1} of ${total}`;
+    } else {
+      const mainIdx   = S.exIdx - S.warmupCount;
+      const round     = Math.floor(mainIdx / S.circuitLen) + 1;
+      const exInRound = (mainIdx % S.circuitLen) + 1;
+      progressText    = `Round ${round} of ${S.numRounds} · ${exInRound} of ${S.circuitLen}`;
+    }
+  } else {
+    progressText = `${S.exIdx + 1} of ${total}`;
+  }
+  document.getElementById('ex-prog').textContent    = progressText;
+  document.getElementById('ex-eyebrow').textContent = ex.eyebrow;
+  document.getElementById('ex-name').textContent    = ex.name;
+  document.getElementById('ex-desc').textContent    = ex.desc;
+  document.getElementById('ex-muscles').innerHTML   = `<b>Works:</b> ${ex.muscles}`;
+  document.getElementById('ex-tip').textContent     = TIPS[Math.floor(Math.random() * TIPS.length)];
+  document.getElementById('btn-pause').textContent  = 'Pause';
+  document.getElementById('btn-done').textContent   = S.exIdx < total - 1 ? 'Done, next →' : 'Finish →';
+
+  startTimer(ex.dur);
+}
+
+// ── Timer ──
+const CIRC = 2 * Math.PI * 82; // r=82
+
+function startTimer(secs) {
+  clearInterval(S.timerInterval);
+  S.secsTotal = secs;
+  S.secsLeft  = secs;
+  S.paused    = false;
+  S.timerEndAt = Date.now() + secs * 1000;
+  tickTimer();
+  // Re-derive secsLeft from the wall clock on every tick (rather than
+  // just decrementing a counter) so the countdown can't drift or "catch up" —
+  // setInterval ticks aren't guaranteed to land exactly 1000ms apart, and a
+  // naive decrement-per-tick compounds that error into a visibly uneven rhythm.
+  S.timerInterval = setInterval(() => {
+    if (S.paused) return;
+    const remainingMs = S.timerEndAt - Date.now();
+    const secsLeft = Math.max(0, Math.ceil(remainingMs / 1000));
+    if (secsLeft !== S.secsLeft) {
+      S.secsLeft = secsLeft;
+      tickTimer();
+    }
+    if (remainingMs <= 0) { clearInterval(S.timerInterval); onTimerEnd(); }
+  }, 200);
+}
+
+function tickTimer() {
+  const ring = document.getElementById('t-ring');
+  const countEl = document.getElementById('t-count');
+
+  countEl.textContent = S.secsLeft;
+
+  const pct = S.secsLeft / S.secsTotal;
+  ring.style.strokeDasharray  = CIRC;
+  ring.style.strokeDashoffset = CIRC * (1 - pct);
+
+  if (S.secsLeft <= 5) ring.classList.add('warn');
+  else                 ring.classList.remove('warn');
+}
+
+function onTimerEnd() {
+  if (S.exIdx >= S.workout.length - 1) finishWorkout();
+  else startRest();
+}
+
+function togglePause() {
+  S.paused = !S.paused;
+  if (S.paused) {
+    S.pausedRemainMs = S.timerEndAt - Date.now();
+  } else {
+    S.timerEndAt = Date.now() + S.pausedRemainMs;
+  }
+  document.getElementById('btn-pause').textContent = S.paused ? 'Resume' : 'Pause';
+}
+
+function doneExercise() {
+  clearInterval(S.timerInterval);
+  if (S.exIdx >= S.workout.length - 1) finishWorkout();
+  else startRest();
+}
+
+function skipExercise() {
+  clearInterval(S.timerInterval);
+  if (S.exIdx >= S.workout.length - 1) finishWorkout();
+  else { S.exIdx++; renderExercise(); }
+}
+
+// ═══════════════════════════════════════════
+// REST
+// ═══════════════════════════════════════════
+function startRest() {
+  clearInterval(S.restInterval);
+  const secs = getRestSecs();
+  const next = S.workout[S.exIdx + 1];
+  document.getElementById('next-name').textContent = next.name;
+
+  let left = secs;
+  document.getElementById('rest-n').textContent = left;
+  showScreen('rest');
+
+  const endAt = Date.now() + secs * 1000;
+  S.restInterval = setInterval(() => {
+    const remainingMs = endAt - Date.now();
+    const left2 = Math.max(0, Math.ceil(remainingMs / 1000));
+    if (left2 !== left) {
+      left = left2;
+      document.getElementById('rest-n').textContent = left;
+    }
+    if (remainingMs <= 0) {
+      clearInterval(S.restInterval);
+      S.exIdx++;
+      renderExercise();
+      showScreen('exercise');
+    }
+  }, 200);
+}
+
+function skipRest() {
+  clearInterval(S.restInterval);
+  S.exIdx++;
+  renderExercise();
+  showScreen('exercise');
+}
+
+// ═══════════════════════════════════════════
+// DONE
+// ═══════════════════════════════════════════
+function finishWorkout() {
+  clearInterval(S.timerInterval);
+  clearInterval(S.restInterval);
+  const mins = S.startMs ? Math.round((Date.now() - S.startMs) / 60000) : S.answers.time;
+  document.getElementById('done-exercises').textContent = S.workout.length;
+  document.getElementById('done-mins').textContent      = Math.max(1, mins);
+  showScreen('done');
+}
+
+function doAgain()         { S.startMs = null; startExercise(0); }
+function reshuffleAndGo()  { S.startMs = null; S.workout = buildWorkout(); renderPreview(); showScreen('preview'); }
+function goHome()          { clearInterval(S.timerInterval); clearInterval(S.restInterval); clearInterval(planRestInterval); S.startMs = null; showScreen('land'); }
+
+// ═══════════════════════════════════════════
+// TRAINER'S PLAN FLOW
+// ═══════════════════════════════════════════
+function planExercises() {
+  return TRAINER_PLANS[S.planDay].exercises;
+}
+
+function openTrainerPlan() {
+  document.getElementById('plan-day-list').innerHTML = Object.keys(TRAINER_PLANS).map(key => {
+    const day = TRAINER_PLANS[key];
+    return `
+      <div class="wi" style="cursor:pointer" onclick="selectPlanDay('${key}')">
+        <div class="wi-name">${day.label}</div>
+        <div class="wi-tag">${day.sub}</div>
+      </div>
+    `;
+  }).join('');
+  showScreen('trainer-pick');
+}
+
+function selectPlanDay(key) {
+  S.planDay = key;
+  const day = TRAINER_PLANS[key];
+  document.getElementById('plan-day-title').textContent = day.label;
+  document.getElementById('plan-day-sub').textContent   = `${day.sub} · 90s rest`;
+  document.getElementById('plan-list').innerHTML = day.exercises.map((e, i) => `
+    <div class="wi">
+      <div class="wi-n">${i + 1}</div>
+      <div class="wi-name">${e.name}</div>
+      <div class="wi-tag">${e.eyebrow}</div>
+      <div class="wi-dur">${e.sets}×${e.repsLabel || e.reps}</div>
+    </div>
+  `).join('');
+  showScreen('trainer');
+}
+
+function startPlanExercise(exIdx) {
+  if (!S.startMs) S.startMs = Date.now();
+  S.planExIdx = exIdx;
+  S.planSetIdx = 0;
+  renderPlanExercise();
+  showScreen('plan-ex');
+}
+
+function renderPlanExercise() {
+  const exs     = planExercises();
+  const ex      = exs[S.planExIdx];
+  const setNum  = S.planSetIdx + 1;
+  const repsText  = ex.repsLabel || `${ex.reps} reps`;
+  const isLastSet = setNum === ex.sets;
+  const isLastEx  = S.planExIdx === exs.length - 1;
+
+  document.getElementById('plan-ex-prog').textContent   = `Exercise ${S.planExIdx + 1} of ${exs.length}`;
+  document.getElementById('plan-set-label').textContent = `Set ${setNum} of ${ex.sets} · ${repsText}`;
+  document.getElementById('plan-ex-name').textContent   = ex.name;
+  document.getElementById('plan-ex-desc').textContent   = ex.desc;
+  document.getElementById('plan-ex-muscles').innerHTML  = `<b>Works:</b> ${ex.muscles}`;
+  document.getElementById('plan-ex-tip').textContent    = TIPS[Math.floor(Math.random() * TIPS.length)];
+  document.getElementById('plan-gym-name').textContent  = ex.gymName;
+
+  const lastAction = isLastSet && isLastEx;
+  document.getElementById('btn-plan-done').textContent  =
+    lastAction ? 'Finish →' : isLastSet ? 'Done — next exercise →' : `Done set ${setNum} →`;
+}
+
+function donePlanSet() {
+  const exs       = planExercises();
+  const ex        = exs[S.planExIdx];
+  const repsText  = ex.repsLabel || `${ex.reps} reps`;
+  const isLastSet = (S.planSetIdx + 1) >= ex.sets;
+  const isLastEx  = S.planExIdx >= exs.length - 1;
+
+  if (isLastSet && isLastEx) { finishPlan(); return; }
+
+  const nextLabel = isLastSet
+    ? `Next: <strong>${exs[S.planExIdx + 1].name}</strong>`
+    : `Next: <strong>Set ${S.planSetIdx + 2} of ${ex.sets} · ${repsText}</strong>`;
+
+  document.getElementById('plan-rest-n').textContent  = ex.restSecs;
+  document.getElementById('plan-next-up').innerHTML   = nextLabel;
+  showScreen('plan-rest');
+  startPlanRest(ex.restSecs, isLastSet);
+}
+
+let planRestInterval = null;
+
+function startPlanRest(secs, movingToNextEx) {
+  clearInterval(planRestInterval);
+  let left = secs;
+  const endAt = Date.now() + secs * 1000;
+  planRestInterval = setInterval(() => {
+    const remainingMs = endAt - Date.now();
+    const left2 = Math.max(0, Math.ceil(remainingMs / 1000));
+    if (left2 !== left) {
+      left = left2;
+      document.getElementById('plan-rest-n').textContent = left;
+    }
+    if (remainingMs <= 0) { clearInterval(planRestInterval); advancePlan(movingToNextEx); }
+  }, 200);
+}
+
+function advancePlan(movingToNextEx) {
+  if (movingToNextEx) { S.planExIdx++; S.planSetIdx = 0; }
+  else                { S.planSetIdx++; }
+  renderPlanExercise();
+  showScreen('plan-ex');
+}
+
+function skipPlanRest() {
+  clearInterval(planRestInterval);
+  const ex = planExercises()[S.planExIdx];
+  advancePlan((S.planSetIdx + 1) >= ex.sets);
+}
+
+function skipPlanExercise() {
+  clearInterval(planRestInterval);
+  const exs = planExercises();
+  if (S.planExIdx >= exs.length - 1) finishPlan();
+  else startPlanExercise(S.planExIdx + 1);
+}
+
+function finishPlan() {
+  clearInterval(planRestInterval);
+  const mins = S.startMs ? Math.round((Date.now() - S.startMs) / 60000) : 0;
+  document.getElementById('done-exercises').textContent = planExercises().length;
+  document.getElementById('done-mins').textContent      = Math.max(1, mins);
+  S.startMs = null;
+  showScreen('done');
+}
+
+// ═══════════════════════════════════════════
+// BREATHING ANIMATION
+// ═══════════════════════════════════════════
+const BREATH_CYCLE = [
+  { txt: 'Breathe in slowly...', ms: 4000 },
+  { txt: 'Hold...',              ms: 1500 },
+  { txt: 'Breathe out...',       ms: 4000 },
+  { txt: 'Hold...',              ms: 1500 },
+];
+let breathIdx = 0;
+
+function advanceBreath() {
+  const el = document.getElementById('breath-msg');
+  if (!el || S.screen !== 'land') {
+    setTimeout(advanceBreath, BREATH_CYCLE[breathIdx].ms);
+    return;
+  }
+  breathIdx = (breathIdx + 1) % BREATH_CYCLE.length;
+  el.style.opacity = '0';
+  setTimeout(() => {
+    el.textContent = BREATH_CYCLE[breathIdx].txt;
+    el.style.opacity = '1';
+    setTimeout(advanceBreath, BREATH_CYCLE[breathIdx].ms);
+  }, 350);
+}
+setTimeout(advanceBreath, BREATH_CYCLE[0].ms);
+</script>
+</body>
+</html>

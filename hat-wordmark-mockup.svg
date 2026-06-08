@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 620">
+  <defs>
+    <radialGradient id="panelGrad" cx="50%" cy="0%" r="100%">
+      <stop offset="0%" stop-color="#52575f"/>
+      <stop offset="55%" stop-color="#3a3e44"/>
+      <stop offset="100%" stop-color="#2b2e33"/>
+    </radialGradient>
+    <linearGradient id="brimGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#383b40"/>
+      <stop offset="100%" stop-color="#222428"/>
+    </linearGradient>
+    <filter id="glow2" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="weave" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(20)">
+      <rect width="4" height="4" fill="transparent"/>
+      <line x1="0" y1="0" x2="0" y2="4" stroke="#000" stroke-width="0.6" opacity="0.06"/>
+    </pattern>
+  </defs>
+
+  <rect width="700" height="620" fill="#22252a"/>
+
+  <!-- crown panels (left/right hint of structure) -->
+  <path d="M 150,90 Q 350,40 550,90 L 575,330 Q 350,300 125,330 Z" fill="url(#panelGrad)"/>
+  <path d="M 150,90 Q 350,40 550,90 L 575,330 Q 350,300 125,330 Z" fill="url(#weave)"/>
+  <!-- side seam lines for structured-cap look -->
+  <path d="M 230,72 L 205,322" stroke="#1d1f23" stroke-width="2" opacity="0.5" fill="none"/>
+  <path d="M 470,72 L 495,322" stroke="#1d1f23" stroke-width="2" opacity="0.5" fill="none"/>
+
+  <!-- top button -->
+  <circle cx="350" cy="50" r="9" fill="#3a3e44" stroke="#1d1f23" stroke-width="2"/>
+
+  <!-- brim -->
+  <path d="M 95,322 Q 350,400 605,322 Q 605,392 350,430 Q 95,392 95,322 Z" fill="url(#brimGrad)"/>
+  <path d="M 95,322 Q 350,400 605,322" stroke="#1a1c1f" stroke-width="3" fill="none" opacity="0.6"/>
+
+  <!-- adjustable strap hint -->
+  <rect x="318" y="318" width="64" height="14" rx="4" fill="#2c2f34" stroke="#1a1c1f" stroke-width="1.5"/>
+
+  <!-- ════ WORDMARK on front panel ════ -->
+  <g transform="translate(350,200)">
+    <!-- soft amber glow halo -->
+    <text x="0" y="0" text-anchor="middle"
+          font-family="'Courier New','Lucida Console',monospace" font-weight="700"
+          font-size="46" letter-spacing="4" fill="#E8821B" opacity="0.30" filter="url(#glow2)">claude_code</text>
+    <!-- main wordmark -->
+    <text x="0" y="0" text-anchor="middle"
+          font-family="'Courier New','Lucida Console',monospace" font-weight="700"
+          font-size="46" letter-spacing="4" fill="#E8821B">claude_code</text>
+    <!-- scanline rules -->
+    <line x1="-128" y1="-30" x2="128" y2="-30" stroke="#E8821B" stroke-width="1.6" opacity="0.5"/>
+    <line x1="-128" y1="22" x2="128" y2="22" stroke="#E8821B" stroke-width="1.6" opacity="0.5"/>
+    <!-- prompt chevron -->
+    <text x="-172" y="8" font-family="'Courier New',monospace" font-weight="700" font-size="28" fill="#E8821B" opacity="0.8">&gt;</text>
+  </g>
+
+  <!-- subtle stitch texture over the wordmark zone -->
+  <g opacity="0.18" transform="translate(350,200)">
+    <rect x="-150" y="-34" width="300" height="68" fill="none"/>
+    <path d="M -150,-30 l 300,0 M -150,-18 l 300,0 M -150,-6 l 300,0 M -150,6 l 300,0 M -150,18 l 300,0 M -150,30 l 300,0"
+          stroke="#000" stroke-width="0.8"/>
+  </g>
+</svg>
